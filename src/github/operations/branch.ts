@@ -8,7 +8,7 @@
 
 import { $ } from "bun";
 import * as core from "@actions/core";
-import type { ParsedGitHubContext } from "../context";
+import type { GitHubContext } from "../context";
 import type { GitHubPullRequest } from "../types";
 import type { Octokits } from "../api/client";
 import type { FetchDataResult } from "../data/fetcher";
@@ -21,15 +21,15 @@ export type BranchInfo = {
 
 export async function setupBranch(
   octokits: Octokits,
-  githubData: FetchDataResult,
-  context: ParsedGitHubContext,
+  githubData: FetchDataResult | null,
+  context: GitHubContext,
 ): Promise<BranchInfo> {
   const { owner, repo } = context.repository;
   const entityNumber = context.entityNumber;
   const { baseBranch, branchPrefix } = context.inputs;
   const isPR = context.isPR;
 
-  if (isPR) {
+  if (isPR && githubData) {
     const prData = githubData.contextData as GitHubPullRequest;
     const prState = prData.state;
 
@@ -84,19 +84,27 @@ export async function setupBranch(
     sourceBranch = repoResponse.data.default_branch;
   }
 
-  // Generate branch name for either an issue or closed/merged PR
-  const entityType = isPR ? "pr" : "issue";
+  // Generate branch name for either an issue, closed/merged PR, or repository_dispatch event
+  let branchName: string;
 
-  // Create Kubernetes-compatible timestamp: lowercase, hyphens only, shorter format
-  const now = new Date();
-  const timestamp = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}-${String(now.getHours()).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}`;
+  if (context.eventName === "repository_dispatch") {
+    // For repository_dispatch events, use run ID for uniqueness since there's no entity number
+    const now = new Date();
+    const timestamp = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}-${String(now.getHours()).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}`;
+    branchName = `${branchPrefix}dispatch-${context.runId}-${timestamp}`;
+  } else {
+    // For issues and PRs, use the existing logic
+    const entityType = isPR ? "pr" : "issue";
+    const now = new Date();
+    const timestamp = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}-${String(now.getHours()).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}`;
+    branchName = `${branchPrefix}${entityType}-${entityNumber}-${timestamp}`;
+  }
 
   // Ensure branch name is Kubernetes-compatible:
   // - Lowercase only
   // - Alphanumeric with hyphens
   // - No underscores
   // - Max 50 chars (to allow for prefixes)
-  const branchName = `${branchPrefix}${entityType}-${entityNumber}-${timestamp}`;
   const newBranch = branchName.toLowerCase().substring(0, 50);
 
   try {
@@ -132,8 +140,18 @@ export async function setupBranch(
     }
 
     // For non-signing case, create and checkout the branch locally only
+    const entityType =
+      context.eventName === "repository_dispatch"
+        ? "dispatch"
+        : isPR
+          ? "pr"
+          : "issue";
+    const entityId =
+      context.eventName === "repository_dispatch"
+        ? context.runId
+        : entityNumber!.toString();
     console.log(
-      `Creating local branch ${newBranch} for ${entityType} #${entityNumber} from source branch: ${sourceBranch}...`,
+      `Creating local branch ${newBranch} for ${entityType} ${entityId} from source branch: ${sourceBranch}...`,
     );
 
     // Fetch and checkout the source branch first to ensure we branch from the correct base

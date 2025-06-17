@@ -12,7 +12,6 @@ import { createOctokit } from "../github/api/client";
 import { parseGitHubContext, isEntityContext } from "../github/context";
 import { getMode, isValidMode, DEFAULT_MODE } from "../modes/registry";
 import type { ModeName } from "../modes/types";
-import { prepare } from "../prepare";
 
 async function run() {
   try {
@@ -60,7 +59,19 @@ async function run() {
     }
 
     // Step 4: Get mode and check trigger conditions
-    const mode = getMode(validatedMode, context);
+    let mode;
+
+    // TEMPORARY HACK: Always use remote-agent mode for repository_dispatch events
+    // This ensures backward compatibility while we transition
+    if (context.eventName === "repository_dispatch") {
+      console.log(
+        "🔧 TEMPORARY HACK: Forcing remote-agent mode for repository_dispatch event",
+      );
+      mode = getMode("remote-agent", context);
+    } else {
+      mode = getMode(context.inputs.mode, context);
+    }
+
     const containsTrigger = mode.shouldTrigger(context);
 
     // Set output for action.yml to check
@@ -72,10 +83,9 @@ async function run() {
     }
 
     // Step 5: Use the new modular prepare function
-    const result = await prepare({
+    const result = await mode.prepare({
       context,
       octokit,
-      mode,
       githubToken,
     });
 

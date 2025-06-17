@@ -6,6 +6,7 @@ import type {
   PullRequestEvent,
   PullRequestReviewEvent,
   PullRequestReviewCommentEvent,
+  RepositoryDispatchEvent,
 } from "@octokit/webhooks-types";
 // Custom types for GitHub Actions events that aren't webhooks
 export type WorkflowDispatchEvent = {
@@ -46,7 +47,11 @@ const ENTITY_EVENT_NAMES = [
   "pull_request_review_comment",
 ] as const;
 
-const AUTOMATION_EVENT_NAMES = ["workflow_dispatch", "schedule"] as const;
+const AUTOMATION_EVENT_NAMES = [
+  "workflow_dispatch",
+  "schedule",
+  "repository_dispatch",
+] as const;
 
 // Derive types from constants for better maintainability
 type EntityEventName = (typeof ENTITY_EVENT_NAMES)[number];
@@ -62,6 +67,17 @@ type BaseContext = {
     full_name: string;
   };
   actor: string;
+  payload:
+    | IssuesEvent
+    | IssueCommentEvent
+    | PullRequestEvent
+    | PullRequestReviewEvent
+    | PullRequestReviewCommentEvent
+    | RepositoryDispatchEvent
+    | WorkflowDispatchEvent
+    | ScheduleEvent;
+  entityNumber?: number;
+  isPR?: boolean;
   inputs: {
     mode: ModeName;
     triggerPhrase: string;
@@ -77,6 +93,14 @@ type BaseContext = {
     useStickyComment: boolean;
     additionalPermissions: Map<string, string>;
     useCommitSigning: boolean;
+  };
+  progressTracking?: {
+    headers?: Record<string, string>;
+    resumeEndpoint?: string;
+    sessionId?: string;
+    progressEndpoint: string;
+    systemProgressEndpoint?: string;
+    oauthTokenEndpoint?: string;
   };
 };
 
@@ -96,7 +120,7 @@ export type ParsedGitHubContext = BaseContext & {
 // Context for automation events (workflow_dispatch, schedule)
 export type AutomationContext = BaseContext & {
   eventName: AutomationEventName;
-  payload: WorkflowDispatchEvent | ScheduleEvent;
+  payload: WorkflowDispatchEvent | ScheduleEvent | RepositoryDispatchEvent;
 };
 
 // Union type for all contexts
@@ -188,6 +212,66 @@ export function parseGitHubContext(): GitHubContext {
         payload,
         entityNumber: payload.pull_request.number,
         isPR: true,
+      };
+    }
+    case "repository_dispatch": {
+      const payload = context.payload as RepositoryDispatchEvent;
+      // Extract task description from client_payload
+      const clientPayload = payload.client_payload as {
+        prompt?: string;
+        stream_endpoint?: string;
+        headers?: Record<string, string>;
+        resume_endpoint?: string;
+        session_id?: string;
+        endpoints?: {
+          resume?: string;
+          progress?: string;
+          system_progress?: string;
+          oauth_endpoint?: string;
+        };
+        overrideInputs?: {
+          model?: string;
+          base_branch?: string;
+        };
+      };
+
+      // Override directPrompt with the prompt
+      if (clientPayload.prompt) {
+        commonFields.inputs.directPrompt = clientPayload.prompt;
+      }
+
+      // Apply input overrides
+      if (clientPayload.overrideInputs) {
+        if (clientPayload.overrideInputs.base_branch) {
+          commonFields.inputs.baseBranch =
+            clientPayload.overrideInputs.base_branch;
+        }
+      }
+
+      // Set up progress tracking - prioritize endpoints object if available, fallback to individual fields
+      let progressTracking: ParsedGitHubContext["progressTracking"] = undefined;
+
+      if (clientPayload.endpoints?.progress || clientPayload.stream_endpoint) {
+        progressTracking = {
+          progressEndpoint:
+            clientPayload.endpoints?.progress ||
+            clientPayload.stream_endpoint ||
+            "",
+          headers: clientPayload.headers,
+          resumeEndpoint:
+            // clientPayload.endpoints?.resume || clientPayload.resume_endpoint,
+            clientPayload.resume_endpoint,
+          sessionId: clientPayload.session_id,
+          systemProgressEndpoint: clientPayload.endpoints?.system_progress,
+          oauthTokenEndpoint: clientPayload.endpoints?.oauth_endpoint,
+        };
+      }
+
+      return {
+        ...commonFields,
+        eventName: "repository_dispatch",
+        payload: payload,
+        progressTracking,
       };
     }
     case "workflow_dispatch": {
@@ -286,4 +370,10 @@ export function isAutomationContext(
   return AUTOMATION_EVENT_NAMES.includes(
     context.eventName as AutomationEventName,
   );
+}
+
+export function isRepositoryDispatchEvent(
+  context: GitHubContext,
+): context is GitHubContext & { payload: RepositoryDispatchEvent } {
+  return context.eventName === "repository_dispatch";
 }

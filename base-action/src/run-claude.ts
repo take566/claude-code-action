@@ -4,6 +4,7 @@ import { promisify } from "util";
 import { unlink, writeFile, stat } from "fs/promises";
 import { createWriteStream } from "fs";
 import { spawn } from "child_process";
+import { StreamHandler } from "./stream-handler";
 
 const execAsync = promisify(exec);
 
@@ -21,7 +22,15 @@ export type ClaudeOptions = {
   claudeEnv?: string;
   fallbackModel?: string;
   timeoutMinutes?: string;
-  model?: string;
+  resumeEndpoint?: string;
+  streamConfig?: string;
+};
+
+export type StreamConfig = {
+  progress_endpoint?: string;
+  headers?: Record<string, string>;
+  resume_endpoint?: string;
+  session_id?: string;
 };
 
 type PreparedConfig = {
@@ -95,15 +104,31 @@ export function prepareRunConfig(
   if (options.fallbackModel) {
     claudeArgs.push("--fallback-model", options.fallbackModel);
   }
-  if (options.model) {
-    claudeArgs.push("--model", options.model);
-  }
   if (options.timeoutMinutes) {
     const timeoutMinutesNum = parseInt(options.timeoutMinutes, 10);
     if (isNaN(timeoutMinutesNum) || timeoutMinutesNum <= 0) {
       throw new Error(
         `timeoutMinutes must be a positive number, got: ${options.timeoutMinutes}`,
       );
+    }
+  }
+  if (options.resumeEndpoint) {
+    claudeArgs.push("--teleport", options.resumeEndpoint);
+  }
+  // Parse stream config for session_id and resume_endpoint
+  if (options.streamConfig) {
+    try {
+      const streamConfig: StreamConfig = JSON.parse(options.streamConfig);
+      // Add --session-id if session_id is provided
+      if (streamConfig.session_id) {
+        claudeArgs.push("--session-id", streamConfig.session_id);
+      }
+      // Only add --teleport if we have both session_id AND resume_endpoint
+      if (streamConfig.session_id && streamConfig.resume_endpoint) {
+        claudeArgs.push("--teleport", streamConfig.session_id);
+      }
+    } catch (e) {
+      console.error("Failed to parse stream_config JSON:", e);
     }
   }
 
@@ -119,6 +144,34 @@ export function prepareRunConfig(
 
 export async function runClaude(promptPath: string, options: ClaudeOptions) {
   const config = prepareRunConfig(promptPath, options);
+
+  // Set up streaming if endpoint is provided in stream config
+  let streamHandler: StreamHandler | null = null;
+  let streamConfig: StreamConfig | null = null;
+  if (options.streamConfig) {
+    try {
+      streamConfig = JSON.parse(options.streamConfig);
+      if (streamConfig?.progress_endpoint) {
+        const customHeaders = streamConfig.headers || {};
+        console.log("parsed headers", customHeaders);
+        Object.keys(customHeaders).forEach((key) => {
+          console.log(`Custom header: ${key} = ${customHeaders[key]}`);
+        });
+        streamHandler = new StreamHandler(
+          streamConfig.progress_endpoint,
+          customHeaders,
+        );
+        console.log(`Streaming output to: ${streamConfig.progress_endpoint}`);
+        if (Object.keys(customHeaders).length > 0) {
+          console.log(
+            `Custom streaming headers: ${Object.keys(customHeaders).join(", ")}`,
+          );
+        }
+      }
+    } catch (e) {
+      console.error("Failed to parse stream_config JSON:", e);
+    }
+  }
 
   // Create a named pipe
   try {
@@ -162,12 +215,31 @@ export async function runClaude(promptPath: string, options: ClaudeOptions) {
     pipeStream.destroy();
   });
 
+  // Prepare environment variables
+  const processEnv = {
+    ...process.env,
+    ...config.env,
+  };
+
+  // If both session_id and resume_endpoint are provided, set environment variables
+  if (streamConfig?.session_id && streamConfig?.resume_endpoint) {
+    processEnv.TELEPORT_RESUME_URL = streamConfig.resume_endpoint;
+    console.log(
+      `Setting TELEPORT_RESUME_URL to: ${streamConfig.resume_endpoint}`,
+    );
+
+    if (streamConfig.headers && Object.keys(streamConfig.headers).length > 0) {
+      processEnv.TELEPORT_HEADERS = JSON.stringify(streamConfig.headers);
+      console.log(`Setting TELEPORT_HEADERS for resume endpoint`);
+    }
+  }
+
+  // Log the full Claude command being executed
+  console.log(`Running Claude with args: ${config.claudeArgs.join(" ")}`);
+
   const claudeProcess = spawn("claude", config.claudeArgs, {
     stdio: ["pipe", "pipe", "inherit"],
-    env: {
-      ...process.env,
-      ...config.env,
-    },
+    env: processEnv,
   });
 
   // Handle Claude process errors
@@ -178,32 +250,51 @@ export async function runClaude(promptPath: string, options: ClaudeOptions) {
 
   // Capture output for parsing execution metrics
   let output = "";
-  claudeProcess.stdout.on("data", (data) => {
+  let lineBuffer = ""; // Buffer for incomplete lines
+
+  claudeProcess.stdout.on("data", async (data) => {
     const text = data.toString();
+    output += text;
 
-    // Try to parse as JSON and pretty print if it's on a single line
-    const lines = text.split("\n");
-    lines.forEach((line: string, index: number) => {
-      if (line.trim() === "") return;
+    // Add new data to line buffer
+    lineBuffer += text;
 
+    // Split into lines - the last element might be incomplete
+    const lines = lineBuffer.split("\n");
+
+    // The last element is either empty (if text ended with \n) or incomplete
+    lineBuffer = lines.pop() || "";
+
+    // Process complete lines
+    for (let index = 0; index < lines.length; index++) {
+      const line = lines[index];
+      if (!line || line.trim() === "") continue;
+
+      // Try to parse as JSON and pretty print if it's on a single line
       try {
         // Check if this line is a JSON object
         const parsed = JSON.parse(line);
         const prettyJson = JSON.stringify(parsed, null, 2);
         process.stdout.write(prettyJson);
-        if (index < lines.length - 1 || text.endsWith("\n")) {
-          process.stdout.write("\n");
+        process.stdout.write("\n");
+
+        // Send valid JSON to stream handler if available
+        if (streamHandler) {
+          try {
+            // Send the original line (which is valid JSON) with newline for proper splitting
+            const dataToSend = line + "\n";
+            await streamHandler.addOutput(dataToSend);
+          } catch (error) {
+            core.warning(`Failed to stream output: ${error}`);
+          }
         }
       } catch (e) {
         // Not a JSON object, print as is
         process.stdout.write(line);
-        if (index < lines.length - 1 || text.endsWith("\n")) {
-          process.stdout.write("\n");
-        }
+        process.stdout.write("\n");
+        // Don't send non-JSON lines to stream handler
       }
-    });
-
-    output += text;
+    }
   });
 
   // Handle stdout errors
@@ -257,8 +348,33 @@ export async function runClaude(promptPath: string, options: ClaudeOptions) {
       }
     }, timeoutMs);
 
-    claudeProcess.on("close", (code) => {
+    claudeProcess.on("close", async (code) => {
       if (!resolved) {
+        // Process any remaining data in the line buffer
+        if (lineBuffer.trim()) {
+          // Try to parse and print the remaining line
+          try {
+            const parsed = JSON.parse(lineBuffer);
+            const prettyJson = JSON.stringify(parsed, null, 2);
+            process.stdout.write(prettyJson);
+            process.stdout.write("\n");
+
+            // Send valid JSON to stream handler if available
+            if (streamHandler) {
+              try {
+                const dataToSend = lineBuffer + "\n";
+                await streamHandler.addOutput(dataToSend);
+              } catch (error) {
+                core.warning(`Failed to stream final output: ${error}`);
+              }
+            }
+          } catch (e) {
+            process.stdout.write(lineBuffer);
+            process.stdout.write("\n");
+            // Don't send non-JSON lines to stream handler
+          }
+        }
+
         clearTimeout(timeoutId);
         resolved = true;
         resolve(code || 0);
@@ -274,6 +390,15 @@ export async function runClaude(promptPath: string, options: ClaudeOptions) {
       }
     });
   });
+
+  // Clean up streaming
+  if (streamHandler) {
+    try {
+      await streamHandler.close();
+    } catch (error) {
+      core.warning(`Failed to close stream handler: ${error}`);
+    }
+  }
 
   // Clean up processes
   try {

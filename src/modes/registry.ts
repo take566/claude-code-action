@@ -16,9 +16,15 @@ import { agentMode } from "./agent";
 import { reviewMode } from "./review";
 import type { GitHubContext } from "../github/context";
 import { isAutomationContext } from "../github/context";
+import { remoteAgentMode } from "./remote-agent";
 
 export const DEFAULT_MODE = "tag" as const;
-export const VALID_MODES = ["tag", "agent", "experimental-review"] as const;
+export const VALID_MODES = [
+  "tag",
+  "agent",
+  "remote-agent",
+  "experimental-review",
+] as const;
 
 /**
  * All available modes.
@@ -28,6 +34,7 @@ const modes = {
   tag: tagMode,
   agent: agentMode,
   "experimental-review": reviewMode,
+  "remote-agent": remoteAgentMode,
 } as const satisfies Record<ModeName, Mode>;
 
 /**
@@ -49,7 +56,13 @@ export function getMode(name: ModeName, context: GitHubContext): Mode {
   // Validate mode can handle the event type
   if (name === "tag" && isAutomationContext(context)) {
     throw new Error(
-      `Tag mode cannot handle ${context.eventName} events. Use 'agent' mode for automation events.`,
+      `Tag mode cannot handle ${context.eventName} events. Use 'agent' mode for automation events or 'remote-agent' mode for repository_dispatch events.`,
+    );
+  }
+
+  if (name === "remote-agent" && context.eventName !== "repository_dispatch") {
+    throw new Error(
+      `Remote agent mode can only handle repository_dispatch events. Use 'tag' mode for @claude mentions or 'agent' mode for other automation events.`,
     );
   }
 

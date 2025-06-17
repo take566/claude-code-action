@@ -39,13 +39,13 @@ describe("Mode Registry", () => {
 
   test("getMode throws error for tag mode with workflow_dispatch event", () => {
     expect(() => getMode("tag", mockWorkflowDispatchContext)).toThrow(
-      "Tag mode cannot handle workflow_dispatch events. Use 'agent' mode for automation events.",
+      "Tag mode cannot handle workflow_dispatch events. Use 'agent' mode for automation events or 'remote-agent' mode for repository_dispatch events.",
     );
   });
 
   test("getMode throws error for tag mode with schedule event", () => {
     expect(() => getMode("tag", mockScheduleContext)).toThrow(
-      "Tag mode cannot handle schedule events. Use 'agent' mode for automation events.",
+      "Tag mode cannot handle schedule events. Use 'agent' mode for automation events or 'remote-agent' mode for repository_dispatch events.",
     );
   });
 
@@ -64,7 +64,7 @@ describe("Mode Registry", () => {
   test("getMode throws error for invalid mode", () => {
     const invalidMode = "invalid" as unknown as ModeName;
     expect(() => getMode(invalidMode, mockContext)).toThrow(
-      "Invalid mode 'invalid'. Valid modes are: 'tag', 'agent', 'experimental-review'. Please check your workflow configuration.",
+      "Invalid mode 'invalid'. Valid modes are: 'tag', 'agent', 'remote-agent', 'experimental-review'. Please check your workflow configuration.",
     );
   });
 
@@ -72,6 +72,7 @@ describe("Mode Registry", () => {
     expect(isValidMode("tag")).toBe(true);
     expect(isValidMode("agent")).toBe(true);
     expect(isValidMode("experimental-review")).toBe(true);
+    expect(isValidMode("remote-agent")).toBe(true);
   });
 
   test("isValidMode returns false for invalid mode", () => {

@@ -102,7 +102,7 @@ runs:
     - name: Setup Node.js
       uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # https://github.com/actions/setup-node/releases/tag/v4.4.0
       with:
-        node-version: ${{ env.NODE_VERSION || '18.x' }}
+        node-version: ${{ env.NODE_VERSION || '22.x' }}
         cache: ${{ inputs.use_node_cache == 'true' && 'npm' || '' }}
 
     - name: Install Bun
@@ -118,7 +118,9 @@ runs:
 
     - name: Install Claude Code
       shell: bash
-      run: bun install -g @anthropic-ai/claude-code@1.0.67
+      run: |
+        # Install Claude Code
+        bun install -g @anthropic-ai/claude-code
 
     - name: Run Claude Code Action
       shell: bash
