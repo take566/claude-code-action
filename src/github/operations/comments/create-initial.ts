@@ -36,6 +36,11 @@ export async function createInitialComment(
         repo,
         issue_number: context.entityNumber,
       });
+      console.log("users");
+      comments.data.forEach((comment) => {
+        console.log(comment.user);
+      });
+
       const existingComment = comments.data.find(
         (comment) =>
           comment.user?.login.indexOf("claude[bot]") !== -1 ||
