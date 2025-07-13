@@ -29,35 +29,34 @@ jobs:
         with:
           fetch-depth: 1
 
-
       - name: Setup Network Restrictions
         if: ${{ vars.DISABLE_NETWORK_RESTRICTIONS != 'true' }}
         run: |
           # Install and configure Squid proxy
           sudo apt-get update && sudo apt-get install -y squid
-          
+
           # Create whitelist for allowed domains
           cat > /tmp/whitelist.txt << 'EOF'
           # Claude API
           .anthropic.com
-          
+
           # GitHub (covers github.com, api.github.com, gist.github.com, etc.)
           .github.com
-          
+
           # GitHub raw content and user uploads
           .githubusercontent.com
-          
+
           # GitHub Container Registry
           ghcr.io
-          
+
           # Package registries
           registry.npmjs.org
           bun.sh
-          
+
           # Azure storage for GitHub Actions cache
           .blob.core.windows.net
           EOF
-          
+
           # Configure Squid
           sudo tee /etc/squid/squid.conf << 'EOF'
           http_port 127.0.0.1:3128
@@ -67,7 +66,7 @@ jobs:
           http_access deny all
           cache deny all
           EOF
-          
+
           # Stop any existing squid instance and start with our config
           sudo squid -k shutdown || true
           sleep 2
