@@ -537,21 +537,25 @@ When `allowed_domains` is set, Claude can only access the domains you explicitly
       vertexai.googleapis.com
 ```
 
-#### GitHub Enterprise Example
+#### Common GitHub Domains
 
-For GitHub Enterprise users, replace the GitHub domains with your own:
+In addition to your provider domains, you may need to include GitHub-related domains. For GitHub.com users, common domains include:
 
 ```yaml
 - uses: anthropics/claude-code-action@beta
   with:
     anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
     allowed_domains: |
-      .github.company.com
-      packages.company.com
+      .anthropic.com  # For Anthropic API
+      .github.com
+      .githubusercontent.com
+      ghcr.io
       .blob.core.windows.net
-      # Add any other internal services Claude needs access to
-      internal-api.company.com
 ```
+
+For GitHub Enterprise users, replace the GitHub.com domains above with your enterprise domains (e.g., `.github.company.com`, `packages.company.com`, etc.).
+
+To determine which domains your workflow needs, you can temporarily run without restrictions and monitor the network requests, or check your GitHub Enterprise configuration for the specific services you use.
 
 #### Custom LLM Proxy Example
 
