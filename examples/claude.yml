@@ -29,65 +29,6 @@ jobs:
         with:
           fetch-depth: 1
 
-      - name: Setup Network Restrictions
-        if: ${{ vars.ENABLE_NETWORK_RESTRICTIONS == 'true' }}
-        run: |
-          # Install and configure Squid proxy
-          sudo apt-get update && sudo apt-get install -y squid
-
-          # Create whitelist for allowed domains
-          cat > /tmp/whitelist.txt << 'EOF'
-          # Provider APIs - Choose one:
-          # Anthropic (1P)
-          .anthropic.com
-
-          # AWS Bedrock:
-          #   bedrock.*.amazonaws.com
-          #   bedrock-runtime.*.amazonaws.com
-
-          # Google Vertex AI:
-          #   *.googleapis.com
-          #   vertexai.googleapis.com
-
-          # GitHub (required for all setups)
-          .github.com
-          .githubusercontent.com
-          ghcr.io
-
-          # Azure storage for GitHub Actions cache
-          .blob.core.windows.net
-
-          # Additional custom domains (newline-separated)
-          # Set via CUSTOM_ALLOWED_DOMAINS repository variable
-          ${{ vars.CUSTOM_ALLOWED_DOMAINS || '' }}
-          EOF
-
-          # Configure Squid
-          sudo tee /etc/squid/squid.conf << 'EOF'
-          http_port 127.0.0.1:3128
-          acl whitelist dstdomain "/tmp/whitelist.txt"
-          acl localhost src 127.0.0.1/32
-          http_access allow localhost whitelist
-          http_access deny all
-          cache deny all
-          EOF
-
-          # Stop any existing squid instance and start with our config
-          sudo squid -k shutdown || true
-          sleep 2
-          sudo rm -f /run/squid.pid
-          sudo squid -N -d 1 &
-          sleep 5
-
-          # Set proxy environment variables
-          echo "http_proxy=http://127.0.0.1:3128" >> $GITHUB_ENV
-          echo "https_proxy=http://127.0.0.1:3128" >> $GITHUB_ENV
-          echo "HTTP_PROXY=http://127.0.0.1:3128" >> $GITHUB_ENV
-          echo "HTTPS_PROXY=http://127.0.0.1:3128" >> $GITHUB_ENV
-          # Bypass proxy for package registries to avoid integrity check issues
-          echo "NO_PROXY=localhost,127.0.0.1,registry.npmjs.org,registry.yarnpkg.com" >> $GITHUB_ENV
-          echo "no_proxy=localhost,127.0.0.1,registry.npmjs.org,registry.yarnpkg.com" >> $GITHUB_ENV
-
       - name: Run Claude PR Action
         uses: anthropics/claude-code-action@beta
         with:
@@ -95,3 +36,13 @@ jobs:
           # Or use OAuth token instead:
           # claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           timeout_minutes: "60"
+
+          # Optional: Enable network restrictions
+          # This limits Claude's internet access to approved domains only
+          # enable_network_restrictions: true
+
+          # Optional: Add custom domains (when network restrictions are enabled)
+          # These are in addition to core domains and auto-detected provider domains
+          # allowed_domains: |
+          #   api.mycompany.com
+          #   internal-service.example.com

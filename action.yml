@@ -96,6 +96,14 @@ inputs:
     description: "Enable commit signing using GitHub's commit signature verification. When false, Claude uses standard git commands"
     required: false
     default: "false"
+  enable_network_restrictions:
+    description: "Enable network restrictions to limit Claude's internet access to approved domains"
+    required: false
+    default: "false"
+  allowed_domains:
+    description: "Additional domains to allow when network restrictions are enabled (newline-separated)"
+    required: false
+    default: ""
 
 outputs:
   execution_file:
@@ -141,6 +149,68 @@ runs:
         ACTIONS_TOKEN: ${{ github.token }}
         ADDITIONAL_PERMISSIONS: ${{ inputs.additional_permissions }}
         USE_COMMIT_SIGNING: ${{ inputs.use_commit_signing }}
+
+    - name: Setup Network Restrictions
+      if: steps.prepare.outputs.contains_trigger == 'true' && inputs.enable_network_restrictions == 'true'
+      shell: bash
+      run: |
+        # Install and configure Squid proxy
+        sudo apt-get update && sudo apt-get install -y squid
+
+        # Create whitelist for allowed domains
+        cat > /tmp/whitelist.txt << 'EOF'
+        # Core domains (always needed)
+        .anthropic.com
+        .github.com
+        .githubusercontent.com
+        ghcr.io
+        .blob.core.windows.net
+        EOF
+
+        # Auto-detect and add provider-specific domains
+        if [[ "${{ inputs.use_bedrock }}" == "true" ]]; then
+          echo "# AWS Bedrock domains" >> /tmp/whitelist.txt
+          echo "bedrock.*.amazonaws.com" >> /tmp/whitelist.txt
+          echo "bedrock-runtime.*.amazonaws.com" >> /tmp/whitelist.txt
+        fi
+
+        if [[ "${{ inputs.use_vertex }}" == "true" ]]; then
+          echo "# Google Vertex AI domains" >> /tmp/whitelist.txt
+          echo "*.googleapis.com" >> /tmp/whitelist.txt
+          echo "vertexai.googleapis.com" >> /tmp/whitelist.txt
+        fi
+
+        # Add any custom domains provided by user
+        if [[ -n "${{ inputs.allowed_domains }}" ]]; then
+          echo "# User-provided custom domains" >> /tmp/whitelist.txt
+          echo "${{ inputs.allowed_domains }}" >> /tmp/whitelist.txt
+        fi
+
+        # Configure Squid
+        sudo tee /etc/squid/squid.conf << 'EOF'
+        http_port 127.0.0.1:3128
+        acl whitelist dstdomain "/tmp/whitelist.txt"
+        acl localhost src 127.0.0.1/32
+        http_access allow localhost whitelist
+        http_access deny all
+        cache deny all
+        EOF
+
+        # Stop any existing squid instance and start with our config
+        sudo squid -k shutdown || true
+        sleep 2
+        sudo rm -f /run/squid.pid
+        sudo squid -N -d 1 &
+        sleep 5
+
+        # Set proxy environment variables
+        echo "http_proxy=http://127.0.0.1:3128" >> $GITHUB_ENV
+        echo "https_proxy=http://127.0.0.1:3128" >> $GITHUB_ENV
+        echo "HTTP_PROXY=http://127.0.0.1:3128" >> $GITHUB_ENV
+        echo "HTTPS_PROXY=http://127.0.0.1:3128" >> $GITHUB_ENV
+        # Bypass proxy for package registries to avoid integrity check issues
+        echo "NO_PROXY=localhost,127.0.0.1,registry.npmjs.org,registry.yarnpkg.com" >> $GITHUB_ENV
+        echo "no_proxy=localhost,127.0.0.1,registry.npmjs.org,registry.yarnpkg.com" >> $GITHUB_ENV
 
     - name: Run Claude Code
       id: claude-code
