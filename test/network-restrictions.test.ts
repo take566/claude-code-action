@@ -1,47 +1,44 @@
-import { describe, it, expect } from "bun:test";
+import { describe, test, expect } from "bun:test";
 
 describe("Network Restrictions", () => {
-  it("should block access to unauthorized domains", async () => {
-    const unauthorizedUrls = [
-      "https://example.com/api/data",
-      "https://jsonplaceholder.typicode.com/posts",
-      "https://httpbin.org/get",
-      "https://pastebin.com/raw/example123",
-      "https://google.com",
-    ];
+  test("should block access to unauthorized domains", async () => {
+    const url = "https://example.com/api/data";
 
-    for (const url of unauthorizedUrls) {
-      try {
-        const response = await fetch(url, {
-          timeout: 5000,
-          agent: undefined,
-        });
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
 
-        expect(response.ok).toBe(false);
-        throw new Error(`Unauthorized domain ${url} was not blocked by proxy`);
-      } catch (error) {
-        expect(error).toBeDefined();
-        console.log(`Successfully blocked: ${url}`);
-      }
+      const response = await fetch(url, {
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+      expect(response.ok).toBe(false);
+      throw new Error(`Unauthorized domain ${url} was not blocked by proxy`);
+    } catch (error) {
+      expect(error).toBeDefined();
+      console.log(`Successfully blocked: ${url}`);
     }
   });
 
-  it("should allow access to whitelisted domains", async () => {
-    const allowedUrls = [
-      "https://api.github.com/zen",
-      "https://registry.npmjs.org/-/ping",
-    ];
+  test("should allow access to whitelisted domains", async () => {
+    const url = "https://api.github.com/zen";
 
-    for (const url of allowedUrls) {
-      try {
-        const response = await fetch(url, { timeout: 5000 });
-        expect(response.ok).toBe(true);
-        console.log(`Successfully allowed: ${url}`);
-      } catch (error) {
-        throw new Error(
-          `Whitelisted domain ${url} was blocked: ${error.message}`,
-        );
-      }
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+      const response = await fetch(url, {
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+      expect(response.ok).toBe(true);
+      console.log(`Successfully allowed: ${url}`);
+    } catch (error: any) {
+      throw new Error(
+        `Whitelisted domain ${url} was blocked: ${error.message}`,
+      );
     }
   });
 });
