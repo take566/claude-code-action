@@ -110,7 +110,7 @@ jobs:
 | `branch_prefix`           | The prefix to use for Claude branches (defaults to 'claude/', use 'claude-' for dash format)                         | No       | `claude/` |
 | `claude_env`              | Custom environment variables to pass to Claude Code execution (YAML format)                                          | No       | ""        |
 | `additional_permissions`  | Additional permissions to enable. Currently supports 'actions: read' for viewing workflow results                    | No       | ""        |
-| `allowed_domains`         | Restrict network access to these domains only (newline-separated). Provider domains are auto-detected.               | No       | ""        |
+| `allowed_domains`         | Restrict network access to these domains only (newline-separated).                                                   | No       | ""        |
 
 \*Required when using direct Anthropic API (default and when not using Bedrock or Vertex)
 
@@ -556,22 +556,6 @@ In addition to your provider domains, you may need to include GitHub-related dom
 For GitHub Enterprise users, replace the GitHub.com domains above with your enterprise domains (e.g., `.github.company.com`, `packages.company.com`, etc.).
 
 To determine which domains your workflow needs, you can temporarily run without restrictions and monitor the network requests, or check your GitHub Enterprise configuration for the specific services you use.
-
-#### Custom LLM Proxy Example
-
-If you're using a custom LLM proxy instead of the standard providers:
-
-```yaml
-- uses: anthropics/claude-code-action@beta
-  with:
-    anthropic_api_key: ${{ secrets.PROXY_API_KEY }}
-    allowed_domains: |
-      llm-proxy.company.com
-      github.com
-      api.github.com
-      raw.githubusercontent.com
-      .githubusercontent.com
-```
 
 ## Cloud Providers
 
