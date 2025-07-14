@@ -500,22 +500,41 @@ For enhanced security, you can restrict Claude's network access to specific doma
 - Preventing access to external services
 - Limiting Claude to only your internal APIs and services
 
-When `allowed_domains` is set, Claude can only access:
+When `allowed_domains` is set, Claude can only access the domains you explicitly list. You'll need to include the appropriate provider domains based on your authentication method.
 
-1. The domains you explicitly list
-2. Auto-detected provider domains (based on your authentication method)
+#### Provider-Specific Examples
 
-#### Basic Example
+##### If using Anthropic API or subscription
 
 ```yaml
 - uses: anthropics/claude-code-action@beta
   with:
     anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+    # Or: claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
     allowed_domains: |
-      .github.com
-      .githubusercontent.com
-      ghcr.io
-      .blob.core.windows.net
+      .anthropic.com
+```
+
+##### If using AWS Bedrock
+
+```yaml
+- uses: anthropics/claude-code-action@beta
+  with:
+    use_bedrock: "true"
+    allowed_domains: |
+      bedrock.*.amazonaws.com
+      bedrock-runtime.*.amazonaws.com
+```
+
+##### If using Google Vertex AI
+
+```yaml
+- uses: anthropics/claude-code-action@beta
+  with:
+    use_vertex: "true"
+    allowed_domains: |
+      *.googleapis.com
+      vertexai.googleapis.com
 ```
 
 #### GitHub Enterprise Example
