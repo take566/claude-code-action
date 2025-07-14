@@ -36,4 +36,10 @@ jobs:
           # Or use OAuth token instead:
           # claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           timeout_minutes: "60"
-          # allowed_domains: "github.com\napi.github.com\nraw.githubusercontent.com"  # Optional: Restrict network access
+          # Optional: Restrict network access to specific domains only
+          # allowed_domains: |
+          #   .anthropic.com
+          #   .github.com
+          #   .githubusercontent.com
+          #   ghcr.io
+          #   .blob.core.windows.net
