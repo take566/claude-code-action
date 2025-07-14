@@ -110,6 +110,7 @@ jobs:
 | `branch_prefix`           | The prefix to use for Claude branches (defaults to 'claude/', use 'claude-' for dash format)                         | No       | `claude/` |
 | `claude_env`              | Custom environment variables to pass to Claude Code execution (YAML format)                                          | No       | ""        |
 | `additional_permissions`  | Additional permissions to enable. Currently supports 'actions: read' for viewing workflow results                    | No       | ""        |
+| `allowed_domains`         | Restrict network access to these domains only (newline-separated). Provider domains are auto-detected.               | No       | ""        |
 
 \*Required when using direct Anthropic API (default and when not using Bedrock or Vertex)
 
@@ -489,6 +490,64 @@ Use a specific Claude model:
   with:
     # model: "claude-3-5-sonnet-20241022"  # Optional: specify a different model
     # ... other inputs
+```
+
+### Network Restrictions
+
+For enhanced security, you can restrict Claude's network access to specific domains only. This feature is particularly useful for:
+
+- Enterprise environments with strict security policies
+- Preventing access to external services
+- Limiting Claude to only your internal APIs and services
+
+When `allowed_domains` is set, Claude can only access:
+
+1. The domains you explicitly list
+2. Auto-detected provider domains (based on your authentication method)
+
+#### Basic Example
+
+```yaml
+- uses: anthropics/claude-code-action@beta
+  with:
+    anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+    allowed_domains: |
+      .github.com
+      .githubusercontent.com
+      ghcr.io
+      .blob.core.windows.net
+```
+
+#### GitHub Enterprise Example
+
+For GitHub Enterprise users, replace the GitHub domains with your own:
+
+```yaml
+- uses: anthropics/claude-code-action@beta
+  with:
+    anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+    allowed_domains: |
+      .github.company.com
+      packages.company.com
+      .blob.core.windows.net
+      # Add any other internal services Claude needs access to
+      internal-api.company.com
+```
+
+#### Custom LLM Proxy Example
+
+If you're using a custom LLM proxy instead of the standard providers:
+
+```yaml
+- uses: anthropics/claude-code-action@beta
+  with:
+    anthropic_api_key: ${{ secrets.PROXY_API_KEY }}
+    allowed_domains: |
+      llm-proxy.company.com
+      github.com
+      api.github.com
+      raw.githubusercontent.com
+      .githubusercontent.com
 ```
 
 ## Cloud Providers

@@ -36,13 +36,4 @@ jobs:
           # Or use OAuth token instead:
           # claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           timeout_minutes: "60"
-
-          # Optional: Enable network restrictions
-          # This limits Claude's internet access to approved domains only
-          # enable_network_restrictions: true
-
-          # Optional: Add custom domains (when network restrictions are enabled)
-          # These are in addition to core domains and auto-detected provider domains
-          # allowed_domains: |
-          #   api.mycompany.com
-          #   internal-service.example.com
+          # allowed_domains: "github.com\napi.github.com\nraw.githubusercontent.com"  # Optional: Restrict network access

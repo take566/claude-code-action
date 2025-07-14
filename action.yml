@@ -96,12 +96,8 @@ inputs:
     description: "Enable commit signing using GitHub's commit signature verification. When false, Claude uses standard git commands"
     required: false
     default: "false"
-  enable_network_restrictions:
-    description: "Enable network restrictions to limit Claude's internet access to approved domains"
-    required: false
-    default: "false"
   allowed_domains:
-    description: "Additional domains to allow when network restrictions are enabled (newline-separated)"
+    description: "Restrict network access to these domains only (newline-separated). If not set, no restrictions are applied. Provider domains are auto-detected."
     required: false
     default: ""
 
@@ -151,39 +147,26 @@ runs:
         USE_COMMIT_SIGNING: ${{ inputs.use_commit_signing }}
 
     - name: Setup Network Restrictions
-      if: steps.prepare.outputs.contains_trigger == 'true' && inputs.enable_network_restrictions == 'true'
+      if: steps.prepare.outputs.contains_trigger == 'true' && inputs.allowed_domains != ''
       shell: bash
       run: |
         # Install and configure Squid proxy
         sudo apt-get update && sudo apt-get install -y squid
 
-        # Create whitelist for allowed domains
-        cat > /tmp/whitelist.txt << 'EOF'
-        # Core domains (always needed)
-        .anthropic.com
-        .github.com
-        .githubusercontent.com
-        ghcr.io
-        .blob.core.windows.net
-        EOF
+        echo "${{ inputs.allowed_domains }}" > /tmp/whitelist.txt
 
-        # Auto-detect and add provider-specific domains
+        if [[ -n "${{ inputs.anthropic_api_key }}" ]]; then
+          echo ".anthropic.com" >> /tmp/whitelist.txt
+        fi
+
         if [[ "${{ inputs.use_bedrock }}" == "true" ]]; then
-          echo "# AWS Bedrock domains" >> /tmp/whitelist.txt
           echo "bedrock.*.amazonaws.com" >> /tmp/whitelist.txt
           echo "bedrock-runtime.*.amazonaws.com" >> /tmp/whitelist.txt
         fi
 
         if [[ "${{ inputs.use_vertex }}" == "true" ]]; then
-          echo "# Google Vertex AI domains" >> /tmp/whitelist.txt
           echo "*.googleapis.com" >> /tmp/whitelist.txt
           echo "vertexai.googleapis.com" >> /tmp/whitelist.txt
-        fi
-
-        # Add any custom domains provided by user
-        if [[ -n "${{ inputs.allowed_domains }}" ]]; then
-          echo "# User-provided custom domains" >> /tmp/whitelist.txt
-          echo "${{ inputs.allowed_domains }}" >> /tmp/whitelist.txt
         fi
 
         # Configure Squid
