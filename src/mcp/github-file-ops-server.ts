@@ -8,6 +8,7 @@ import { join } from "path";
 import fetch from "node-fetch";
 import { GITHUB_API_URL } from "../github/api/config";
 import { retryWithBackoff } from "../utils/retry";
+import { Octokit } from "@octokit/rest";
 
 type GitHubRef = {
   object: {
@@ -59,6 +60,12 @@ async function getOrCreateBranchRef(
   branch: string,
   githubToken: string,
 ): Promise<string> {
+  // Create Octokit instance
+  const octokit = new Octokit({
+    auth: githubToken,
+    baseUrl: GITHUB_API_URL,
+  });
+
   // Try to get the branch reference
   const refUrl = `${GITHUB_API_URL}/repos/${owner}/${repo}/git/refs/heads/${branch}`;
   const refResponse = await fetch(refUrl, {
@@ -77,9 +84,6 @@ async function getOrCreateBranchRef(
   if (refResponse.status !== 404) {
     throw new Error(`Failed to get branch reference: ${refResponse.status}`);
   }
-
-  // Branch doesn't exist, need to create it
-  console.log(`Branch ${branch} does not exist, creating it...`);
 
   // Get base branch from environment or determine it
   const baseBranch = process.env.BASE_BRANCH || "main";
@@ -139,30 +143,19 @@ async function getOrCreateBranchRef(
     baseSha = baseRefData.object.sha;
   }
 
-  // Create the new branch
-  const createRefUrl = `${GITHUB_API_URL}/repos/${owner}/${repo}/git/refs`;
-  const createRefResponse = await fetch(createRefUrl, {
-    method: "POST",
-    headers: {
-      Accept: "application/vnd.github+json",
-      Authorization: `Bearer ${githubToken}`,
-      "X-GitHub-Api-Version": "2022-11-28",
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
+  // Create the new branch using Octokit
+  try {
+    await octokit.rest.git.createRef({
+      owner,
+      repo,
       ref: `refs/heads/${branch}`,
       sha: baseSha,
-    }),
-  });
-
-  if (!createRefResponse.ok) {
-    const errorText = await createRefResponse.text();
-    throw new Error(
-      `Failed to create branch: ${createRefResponse.status} - ${errorText}`,
-    );
+    });
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    throw new Error(`Failed to create branch: ${errorMessage}`);
   }
 
-  console.log(`Successfully created branch ${branch}`);
   return baseSha;
 }
 
@@ -569,7 +562,6 @@ server.tool(
 
             // Only retry on 403 errors - these are the intermittent failures we're targeting
             if (updateRefResponse.status === 403) {
-              console.log("Received 403 error, will retry...");
               throw error;
             }
 
