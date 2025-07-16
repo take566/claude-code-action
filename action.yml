@@ -60,6 +60,10 @@ inputs:
     description: "Custom environment variables to pass to Claude Code execution (YAML format)"
     required: false
     default: ""
+  settings:
+    description: "Claude Code settings as JSON string or path to settings JSON file"
+    required: false
+    default: ""
 
   # Auth configuration
   anthropic_api_key:
@@ -181,7 +185,7 @@ runs:
     - name: Run Claude Code
       id: claude-code
       if: steps.prepare.outputs.contains_trigger == 'true'
-      uses: anthropics/claude-code-base-action@ca8aaa8335d12ada79d9336739b03e24b4aa5ae3 # v0.0.34
+      uses: anthropics/claude-code-base-action@503cc7080e62d63d2cc1d80035ed04617d5efb47 # v0.0.35
       with:
         prompt_file: ${{ runner.temp }}/claude-prompts/claude-prompt.txt
         allowed_tools: ${{ env.ALLOWED_TOOLS }}
@@ -196,6 +200,7 @@ runs:
         anthropic_api_key: ${{ inputs.anthropic_api_key }}
         claude_code_oauth_token: ${{ inputs.claude_code_oauth_token }}
         claude_env: ${{ inputs.claude_env }}
+        settings: ${{ inputs.settings }}
       env:
         # Model configuration
         ANTHROPIC_MODEL: ${{ inputs.model || inputs.anthropic_model }}

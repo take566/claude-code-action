@@ -35,6 +35,86 @@ This command will guide you through setting up the GitHub app and required secre
    - Or `CLAUDE_CODE_OAUTH_TOKEN` for OAuth token authentication (Pro and Max users can generate this by running `claude setup-token` locally)
 3. Copy the workflow file from [`examples/claude.yml`](./examples/claude.yml) into your repository's `.github/workflows/`
 
+### Using a Custom GitHub App
+
+If you prefer not to install the official Claude app, you can create your own GitHub App to use with this action. This gives you complete control over permissions and access.
+
+**When you may want to use a custom GitHub App:**
+
+- You need more restrictive permissions than the official app
+- Organization policies prevent installing third-party apps
+- You're using AWS Bedrock or Google Vertex AI
+
+**Steps to create and use a custom GitHub App:**
+
+1. **Create a new GitHub App:**
+
+   - Go to https://github.com/settings/apps (for personal apps) or your organization's settings
+   - Click "New GitHub App"
+   - Configure the app with these minimum permissions:
+     - **Repository permissions:**
+       - Contents: Read & Write
+       - Issues: Read & Write
+       - Pull requests: Read & Write
+     - **Account permissions:** None required
+   - Set "Where can this GitHub App be installed?" to your preference
+   - Create the app
+
+2. **Generate and download a private key:**
+
+   - After creating the app, scroll down to "Private keys"
+   - Click "Generate a private key"
+   - Download the `.pem` file (keep this secure!)
+
+3. **Install the app on your repository:**
+
+   - Go to the app's settings page
+   - Click "Install App"
+   - Select the repositories where you want to use Claude
+
+4. **Add the app credentials to your repository secrets:**
+
+   - Go to your repository's Settings → Secrets and variables → Actions
+   - Add these secrets:
+     - `APP_ID`: Your GitHub App's ID (found in the app settings)
+     - `APP_PRIVATE_KEY`: The contents of the downloaded `.pem` file
+
+5. **Update your workflow to use the custom app:**
+
+   ```yaml
+   name: Claude with Custom App
+   on:
+     issue_comment:
+       types: [created]
+     # ... other triggers
+
+   jobs:
+     claude-response:
+       runs-on: ubuntu-latest
+       steps:
+         # Generate a token from your custom app
+         - name: Generate GitHub App token
+           id: app-token
+           uses: actions/create-github-app-token@v1
+           with:
+             app-id: ${{ secrets.APP_ID }}
+             private-key: ${{ secrets.APP_PRIVATE_KEY }}
+
+         # Use Claude with your custom app's token
+         - uses: anthropics/claude-code-action@beta
+           with:
+             anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+             github_token: ${{ steps.app-token.outputs.token }}
+             # ... other configuration
+   ```
+
+**Important notes:**
+
+- The custom app must have read/write permissions for Issues, Pull Requests, and Contents
+- Your app's token will have the exact permissions you configured, nothing more
+
+For more information on creating GitHub Apps, see the [GitHub documentation](https://docs.github.com/en/apps/creating-github-apps).
+
 ## 📚 FAQ
 
 Having issues or questions? Check out our [Frequently Asked Questions](./FAQ.md) for solutions to common problems and detailed explanations of Claude's capabilities and limitations.
@@ -109,6 +189,7 @@ jobs:
 | `trigger_phrase`          | The trigger phrase to look for in comments, issue/PR bodies, and issue titles                                        | No       | `@claude` |
 | `branch_prefix`           | The prefix to use for Claude branches (defaults to 'claude/', use 'claude-' for dash format)                         | No       | `claude/` |
 | `claude_env`              | Custom environment variables to pass to Claude Code execution (YAML format)                                          | No       | ""        |
+| `settings`                | Claude Code settings as JSON string or path to settings JSON file                                                    | No       | ""        |
 | `additional_permissions`  | Additional permissions to enable. Currently supports 'actions: read' for viewing workflow results                    | No       | ""        |
 | `allowed_domains`         | Restrict network access to these domains only (newline-separated).                                                   | No       | ""        |
 
@@ -556,6 +637,65 @@ In addition to your provider domains, you may need to include GitHub-related dom
 For GitHub Enterprise users, replace the GitHub.com domains above with your enterprise domains (e.g., `.github.company.com`, `packages.company.com`, etc.).
 
 To determine which domains your workflow needs, you can temporarily run without restrictions and monitor the network requests, or check your GitHub Enterprise configuration for the specific services you use.
+
+### Claude Code Settings
+
+You can provide Claude Code settings to customize behavior such as model selection, environment variables, permissions, and hooks. Settings can be provided either as a JSON string or a path to a settings file.
+
+#### Option 1: Settings File
+
+```yaml
+- uses: anthropics/claude-code-action@beta
+  with:
+    settings: "path/to/settings.json"
+    # ... other inputs
+```
+
+#### Option 2: Inline Settings
+
+```yaml
+- uses: anthropics/claude-code-action@beta
+  with:
+    settings: |
+      {
+        "model": "claude-opus-4-20250514",
+        "env": {
+          "DEBUG": "true",
+          "API_URL": "https://api.example.com"
+        },
+        "permissions": {
+          "allow": ["Bash", "Read"],
+          "deny": ["WebFetch"]
+        },
+        "hooks": {
+          "PreToolUse": [{
+            "matcher": "Bash",
+            "hooks": [{
+              "type": "command",
+              "command": "echo Running bash command..."
+            }]
+          }]
+        }
+      }
+    # ... other inputs
+```
+
+The settings support all Claude Code settings options including:
+
+- `model`: Override the default model
+- `env`: Environment variables for the session
+- `permissions`: Tool usage permissions
+- `hooks`: Pre/post tool execution hooks
+- And more...
+
+For a complete list of available settings and their descriptions, see the [Claude Code settings documentation](https://docs.anthropic.com/en/docs/claude-code/settings).
+
+**Notes**:
+
+- The `enableAllProjectMcpServers` setting is always set to `true` by this action to ensure MCP servers work correctly.
+- If both the `model` input parameter and a `model` in settings are provided, the `model` input parameter takes precedence.
+- The `allowed_tools` and `disallowed_tools` input parameters take precedence over `permissions` in settings.
+- In a future version, we may deprecate individual input parameters in favor of using the settings file for all configuration.
 
 ## Cloud Providers
 
