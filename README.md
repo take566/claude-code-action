@@ -582,7 +582,7 @@ For enhanced security, you can restrict Claude's network access to specific doma
 - Preventing access to external services
 - Limiting Claude to only your internal APIs and services
 
-When `allowed_domains` is set, Claude can only access the domains you explicitly list. You'll need to include the appropriate provider domains based on your authentication method.
+When `experimental_allowed_domains` is set, Claude can only access the domains you explicitly list. You'll need to include the appropriate provider domains based on your authentication method.
 
 #### Provider-Specific Examples
 
@@ -593,7 +593,7 @@ When `allowed_domains` is set, Claude can only access the domains you explicitly
   with:
     anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
     # Or: claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-    allowed_domains: |
+    experimental_allowed_domains: |
       .anthropic.com
 ```
 
@@ -603,7 +603,7 @@ When `allowed_domains` is set, Claude can only access the domains you explicitly
 - uses: anthropics/claude-code-action@beta
   with:
     use_bedrock: "true"
-    allowed_domains: |
+    experimental_allowed_domains: |
       bedrock.*.amazonaws.com
       bedrock-runtime.*.amazonaws.com
 ```
@@ -614,7 +614,7 @@ When `allowed_domains` is set, Claude can only access the domains you explicitly
 - uses: anthropics/claude-code-action@beta
   with:
     use_vertex: "true"
-    allowed_domains: |
+    experimental_allowed_domains: |
       *.googleapis.com
       vertexai.googleapis.com
 ```
@@ -627,7 +627,7 @@ In addition to your provider domains, you may need to include GitHub-related dom
 - uses: anthropics/claude-code-action@beta
   with:
     anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-    allowed_domains: |
+    experimental_allowed_domains: |
       .anthropic.com  # For Anthropic API
       .github.com
       .githubusercontent.com
