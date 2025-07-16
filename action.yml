@@ -100,7 +100,7 @@ inputs:
     description: "Enable commit signing using GitHub's commit signature verification. When false, Claude uses standard git commands"
     required: false
     default: "false"
-  allowed_domains:
+  experimental_allowed_domains:
     description: "Restrict network access to these domains only (newline-separated). If not set, no restrictions are applied. Provider domains are auto-detected."
     required: false
     default: ""
@@ -151,13 +151,13 @@ runs:
         USE_COMMIT_SIGNING: ${{ inputs.use_commit_signing }}
 
     - name: Setup Network Restrictions
-      if: steps.prepare.outputs.contains_trigger == 'true' && inputs.allowed_domains != ''
+      if: steps.prepare.outputs.contains_trigger == 'true' && inputs.experimental_allowed_domains != ''
       shell: bash
       run: |
         # Install and configure Squid proxy
         sudo apt-get update && sudo apt-get install -y squid
 
-        echo "${{ inputs.allowed_domains }}" > $RUNNER_TEMP/whitelist.txt
+        echo "${{ inputs.experimental_allowed_domains }}" > $RUNNER_TEMP/whitelist.txt
 
         # Configure Squid
         sudo tee /etc/squid/squid.conf << EOF
