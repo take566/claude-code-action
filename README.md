@@ -16,14 +16,16 @@ A general-purpose [Claude Code](https://claude.ai/code) action for GitHub PRs an
 
 ## Quickstart
 
-The easiest way to set up this action is through [Claude Code](https://claude.ai/code) in the terminal. Just open `claude` and run `/install-github-app`.
+The easiest way to set up this action is through [Claude Code](https://claude.ai/code) in the terminal:
+
+```bash
+claude
+/install-github-app
+```
 
 This command will guide you through setting up the GitHub app and required secrets.
 
-**Note**:
-
-- You must be a repository admin to install the GitHub app and add secrets
-- This quickstart method is only available for direct Anthropic API users. If you're using AWS Bedrock, please see the instructions below.
+**Requirements**: You must be a repository admin to install the GitHub app and add secrets.
 
 ### Manual Setup (Direct API)
 
@@ -37,49 +39,27 @@ This command will guide you through setting up the GitHub app and required secre
 
 ### Using a Custom GitHub App
 
-If you prefer not to install the official Claude app, you can create your own GitHub App to use with this action. This gives you complete control over permissions and access.
-
-**When you may want to use a custom GitHub App:**
-
-- You need more restrictive permissions than the official app
+If you prefer not to install the official Claude app, you can create your own GitHub App. This is useful when:
 - Organization policies prevent installing third-party apps
+- You need more restrictive permissions
 - You're using AWS Bedrock or Google Vertex AI
 
-**Steps to create and use a custom GitHub App:**
+**Setup steps:**
 
-1. **Create a new GitHub App:**
+1. **Create a GitHub App** at https://github.com/settings/apps with these permissions:
+   - Contents: Read & Write
+   - Issues: Read & Write  
+   - Pull requests: Read & Write
 
-   - Go to https://github.com/settings/apps (for personal apps) or your organization's settings
-   - Click "New GitHub App"
-   - Configure the app with these minimum permissions:
-     - **Repository permissions:**
-       - Contents: Read & Write
-       - Issues: Read & Write
-       - Pull requests: Read & Write
-     - **Account permissions:** None required
-   - Set "Where can this GitHub App be installed?" to your preference
-   - Create the app
+2. **Generate a private key** and download the `.pem` file
 
-2. **Generate and download a private key:**
+3. **Install the app** on your repositories
 
-   - After creating the app, scroll down to "Private keys"
-   - Click "Generate a private key"
-   - Download the `.pem` file (keep this secure!)
+4. **Add credentials** to repository secrets:
+   - `APP_ID`: Your app's ID
+   - `APP_PRIVATE_KEY`: Contents of the `.pem` file
 
-3. **Install the app on your repository:**
-
-   - Go to the app's settings page
-   - Click "Install App"
-   - Select the repositories where you want to use Claude
-
-4. **Add the app credentials to your repository secrets:**
-
-   - Go to your repository's Settings → Secrets and variables → Actions
-   - Add these secrets:
-     - `APP_ID`: Your GitHub App's ID (found in the app settings)
-     - `APP_PRIVATE_KEY`: The contents of the downloaded `.pem` file
-
-5. **Update your workflow to use the custom app:**
+5. **Update your workflow:**
 
    ```yaml
    name: Claude with Custom App
@@ -107,11 +87,6 @@ If you prefer not to install the official Claude app, you can create your own Gi
              github_token: ${{ steps.app-token.outputs.token }}
              # ... other configuration
    ```
-
-**Important notes:**
-
-- The custom app must have read/write permissions for Issues, Pull Requests, and Contents
-- Your app's token will have the exact permissions you configured, nothing more
 
 For more information on creating GitHub Apps, see the [GitHub documentation](https://docs.github.com/en/apps/creating-github-apps).
 
@@ -282,10 +257,7 @@ For example, if your Python MCP server is at `mcp_servers/weather.py`, you would
   ["--directory", "${{ github.workspace }}/mcp_servers/", "run", "weather.py"]
 ```
 
-**Important**:
-
-- Always use GitHub Secrets (`${{ secrets.SECRET_NAME }}`) for sensitive values like API keys, tokens, or passwords. Never hardcode secrets directly in the workflow file.
-- Your custom servers will override any built-in servers with the same name.
+**Important**: Your custom servers will override any built-in servers with the same name.
 
 ## Examples
 
@@ -397,11 +369,19 @@ Perfect for automatically reviewing PRs from new team members, external contribu
 
 ## How It Works
 
-1. **Trigger Detection**: Listens for comments containing the trigger phrase (default: `@claude`) or issue assignment to a specific user
-2. **Context Gathering**: Analyzes the PR/issue, comments, code changes
-3. **Smart Responses**: Either answers questions or implements changes
-4. **Branch Management**: Creates new PRs for human authors, pushes directly for Claude's own PRs
-5. **Communication**: Posts updates at every step to keep you informed
+1. **Trigger Detection**: Listens for comments containing the trigger phrase (default: `@claude`), issue assignments, or label applications
+2. **Context Gathering**: Analyzes the PR/issue, comments, code changes, and repository structure
+3. **Smart Responses**: Claude can:
+   - Answer questions about code and architecture
+   - Provide detailed code reviews
+   - Implement requested changes
+   - Fix bugs and add features
+4. **Branch Management**:
+   - Creates new branches for issues
+   - Pushes directly to open PR branches
+   - Creates new branches for closed/merged PRs
+5. **Progress Tracking**: Updates a single comment with checkboxes showing task completion
+6. **Integration**: Works seamlessly with GitHub's PR and issue workflows
 
 This action is built on top of [`anthropics/claude-code-base-action`](https://github.com/anthropics/claude-code-base-action).
 
@@ -852,41 +832,6 @@ claude_code_oauth_token: "oauth_token_..." # Exposed and vulnerable!
 5. ❌ Never share API keys or tokens in pull requests or issues
 6. ❌ Avoid logging workflow variables that might contain keys
 
-## Security Best Practices
-
-**⚠️ IMPORTANT: Never commit API keys directly to your repository! Always use GitHub Actions secrets.**
-
-To securely use your Anthropic API key:
-
-1. Add your API key as a repository secret:
-
-   - Go to your repository's Settings
-   - Navigate to "Secrets and variables" → "Actions"
-   - Click "New repository secret"
-   - Name it `ANTHROPIC_API_KEY`
-   - Paste your API key as the value
-
-2. Reference the secret in your workflow:
-   ```yaml
-   anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-   ```
-
-**Never do this:**
-
-```yaml
-# ❌ WRONG - Exposes your API key
-anthropic_api_key: "sk-ant-..."
-```
-
-**Always do this:**
-
-```yaml
-# ✅ CORRECT - Uses GitHub secrets
-anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-```
-
-This applies to all sensitive values including API keys, access tokens, and credentials.
-We also recommend that you always use short-lived tokens when possible
 
 ## License
 
