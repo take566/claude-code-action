@@ -840,14 +840,29 @@ export async function createPrompt(
     const hasActionsReadPermission =
       context.inputs.additionalPermissions.get("actions") === "read" &&
       context.isPR;
+
+    // Get mode-specific tools
+    const modeAllowedTools = mode.getAllowedTools();
+    const modeDisallowedTools = mode.getDisallowedTools();
+
+    // Combine with existing allowed tools
+    const combinedAllowedTools = [
+      ...context.inputs.allowedTools,
+      ...modeAllowedTools,
+    ];
+    const combinedDisallowedTools = [
+      ...context.inputs.disallowedTools,
+      ...modeDisallowedTools,
+    ];
+
     const allAllowedTools = buildAllowedToolsString(
-      context.inputs.allowedTools,
+      combinedAllowedTools,
       hasActionsReadPermission,
       context.inputs.useCommitSigning,
     );
     const allDisallowedTools = buildDisallowedToolsString(
-      context.inputs.disallowedTools,
-      context.inputs.allowedTools,
+      combinedDisallowedTools,
+      combinedAllowedTools,
     );
 
     core.exportVariable("ALLOWED_TOOLS", allAllowedTools);

@@ -5,17 +5,17 @@
  *
  * To add a new mode:
  * 1. Add the mode name to VALID_MODES below
- * 2. Create the mode implementation in a new directory (e.g., src/modes/review/)
+ * 2. Create the mode implementation in a new directory (e.g., src/modes/new-mode/)
  * 3. Import and add it to the modes object below
  * 4. Update action.yml description to mention the new mode
  */
 
-import type { Mode } from "./types";
-import { tagMode } from "./tag/index";
+import type { Mode, ModeName } from "./types";
+import { tagMode } from "./tag";
+import { agentMode } from "./agent";
 
 export const DEFAULT_MODE = "tag" as const;
-export const VALID_MODES = ["tag"] as const;
-export type ModeName = (typeof VALID_MODES)[number];
+export const VALID_MODES = ["tag", "agent"] as const;
 
 /**
  * All available modes.
@@ -23,6 +23,7 @@ export type ModeName = (typeof VALID_MODES)[number];
  */
 const modes = {
   tag: tagMode,
+  agent: agentMode,
 } as const satisfies Record<ModeName, Mode>;
 
 /**

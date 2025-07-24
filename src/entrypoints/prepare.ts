@@ -55,7 +55,7 @@ async function run() {
     await checkHumanActor(octokit.rest, context);
 
     // Step 6: Create initial tracking comment (mode-aware)
-    // Some modes (e.g., future review/freeform modes) may not need tracking comments
+    // Some modes (e.g., agent mode) may not need tracking comments
     let commentId: number | undefined;
     let commentData:
       | Awaited<ReturnType<typeof createInitialComment>>

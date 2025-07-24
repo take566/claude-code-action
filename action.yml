@@ -26,7 +26,7 @@ inputs:
 
   # Mode configuration
   mode:
-    description: "Execution mode for the action. Currently only 'tag' mode is supported (traditional implementation triggered by mentions/assignments)"
+    description: "Execution mode for the action. Valid modes: 'tag' (default - triggered by mentions/assignments), 'agent' (for automation with no trigger checking)"
     required: false
     default: "tag"
 

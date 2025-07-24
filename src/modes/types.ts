@@ -1,5 +1,6 @@
 import type { ParsedGitHubContext } from "../github/context";
-import type { ModeName } from "./registry";
+
+export type ModeName = "tag" | "agent";
 
 export type ModeContext = {
   mode: ModeName;
@@ -20,9 +21,9 @@ export type ModeData = {
  * Each mode defines its own behavior for trigger detection, prompt generation,
  * and tracking comment creation.
  *
- * Future modes might include:
- * - 'review': Optimized for code reviews without tracking comments
- * - 'freeform': For automation with no trigger checking
+ * Current modes include:
+ * - 'tag': Traditional implementation triggered by mentions/assignments
+ * - 'agent': For automation with no trigger checking
  */
 export type Mode = {
   name: ModeName;
@@ -39,13 +40,12 @@ export type Mode = {
   prepareContext(context: ParsedGitHubContext, data?: ModeData): ModeContext;
 
   /**
-   * Returns additional tools that should be allowed for this mode
-   * (base GitHub tools are always included)
+   * Returns the list of tools that should be allowed for this mode
    */
   getAllowedTools(): string[];
 
   /**
-   * Returns tools that should be disallowed for this mode
+   * Returns the list of tools that should be disallowed for this mode
    */
   getDisallowedTools(): string[];
 

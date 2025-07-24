@@ -7,9 +7,8 @@ import type {
   PullRequestReviewEvent,
   PullRequestReviewCommentEvent,
 } from "@octokit/webhooks-types";
-import type { ModeName } from "../modes/registry";
-import { DEFAULT_MODE } from "../modes/registry";
-import { isValidMode } from "../modes/registry";
+import type { ModeName } from "../modes/types";
+import { DEFAULT_MODE, isValidMode } from "../modes/registry";
 
 export type ParsedGitHubContext = {
   runId: string;
