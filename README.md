@@ -215,7 +215,7 @@ The traditional implementation mode that responds to @claude mentions, issue ass
 - **Use case**: General-purpose code implementation and Q&A
 
 ```yaml
-- uses: anthropics/claude-code-action@main
+- uses: anthropics/claude-code-action@beta
   with:
     anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
     # mode: tag is the default
@@ -230,7 +230,7 @@ For automation and scheduled tasks without trigger checking.
 - **Use case**: Maintenance tasks, automated reporting, scheduled checks
 
 ```yaml
-- uses: anthropics/claude-code-action@main
+- uses: anthropics/claude-code-action@beta
   with:
     mode: agent
     anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
