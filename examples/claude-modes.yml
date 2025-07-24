@@ -1,117 +1,56 @@
-name: Claude Code Action Mode Examples
+name: Claude Mode Examples
 
 on:
-  # Example 1: Tag mode (default) - traditional implementation triggered by mentions
+  # Common events for both modes
   issue_comment:
     types: [created]
   issues:
-    types: [opened, assigned, labeled]
+    types: [opened, labeled]
   pull_request:
-    types: [opened, synchronize]
-  pull_request_review_comment:
-    types: [created]
-  pull_request_review:
-    types: [submitted]
-
-  # Example 2: Agent mode - for scheduled tasks and automation
-  schedule:
-    - cron: "0 0 * * 1" # Weekly on Monday
-  workflow_dispatch:
-    inputs:
-      task:
-        description: "Task for Claude to perform"
-        required: true
-        type: string
+    types: [opened]
 
 jobs:
-  # Example 1: Tag mode (default) - triggered by @claude mentions
-  claude-tag-mode:
-    if: github.event_name != 'schedule' && github.event_name != 'workflow_dispatch'
+  # Tag Mode (Default) - Traditional implementation
+  tag-mode-example:
     runs-on: ubuntu-latest
     permissions:
       contents: write
       pull-requests: write
       issues: write
+      id-token: write
     steps:
-      - uses: actions/checkout@v4
       - uses: anthropics/claude-code-action@main
         with:
-          # mode defaults to 'tag' - no need to specify
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          # Responds to @claude mentions, assignments, and labels
-          # Creates tracking comments showing progress
-          # Full implementation capabilities
+          # Tag mode (default) behavior:
+          # - Scans for @claude mentions in comments, issues, and PRs
+          # - Only acts when trigger phrase is found
+          # - Creates tracking comments with progress checkboxes
+          # - Perfect for: Interactive Q&A, on-demand code changes
 
-  # Example 2: Agent mode - for automation
-  claude-agent-scheduled:
-    if: github.event_name == 'schedule'
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      pull-requests: write
-      issues: write
-    steps:
-      - uses: actions/checkout@v4
-      - uses: anthropics/claude-code-action@main
-        with:
-          mode: agent
-          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          override_prompt: |
-            Check the repository for:
-            1. Outdated dependencies in package.json
-            2. TODO comments that haven't been addressed
-            3. Files that haven't been updated in over 6 months
-
-            Create an issue summarizing your findings.
-          # Always runs - no trigger checking
-          # Perfect for scheduled tasks
-
-  # Example 3: Agent mode with workflow_dispatch
-  claude-agent-dispatch:
-    if: github.event_name == 'workflow_dispatch'
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      pull-requests: write
-      issues: write
-    steps:
-      - uses: actions/checkout@v4
-      - uses: anthropics/claude-code-action@main
-        with:
-          mode: agent
-          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          override_prompt: |
-            Task: ${{ github.event.inputs.task }}
-
-            Repository: $REPOSITORY
-            Triggered by: $TRIGGER_USERNAME
-
-            Please complete the requested task and provide a summary of what was done.
-
-  # Example 4: Custom security review with override_prompt
-  claude-security-review:
-    if: github.event.pull_request.draft == false && contains(github.event.pull_request.labels.*.name, 'security-review')
+  # Agent Mode - Automation without triggers
+  agent-mode-auto-review:
+    # Automatically review every new PR
+    if: github.event_name == 'pull_request' && github.event.action == 'opened'
     runs-on: ubuntu-latest
     permissions:
       contents: read
       pull-requests: write
+      issues: write
+      id-token: write
     steps:
-      - uses: actions/checkout@v4
       - uses: anthropics/claude-code-action@main
         with:
+          mode: agent
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           override_prompt: |
-            Perform a security review of PR #$PR_NUMBER.
-
-            Focus on:
-            - SQL injection vulnerabilities
-            - XSS (Cross-Site Scripting) risks
-            - Authentication/authorization issues
-            - Sensitive data exposure
-            - Input validation problems
-
-            Changed files:
-            $CHANGED_FILES
-
-            Provide severity ratings (Critical/High/Medium/Low) for any issues found.
-            Be specific about file paths and line numbers.
+            Review this PR for code quality. Focus on:
+            - Potential bugs or logic errors
+            - Security concerns
+            - Performance issues
+            
+            Provide specific, actionable feedback.
+          # Agent mode behavior:
+          # - NO @claude mention needed - runs immediately
+          # - Enables true automation (impossible with tag mode)
+          # - Perfect for: CI/CD integration, automatic reviews, label-based workflows
