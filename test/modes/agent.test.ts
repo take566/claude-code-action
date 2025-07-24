@@ -19,7 +19,7 @@ describe("Agent Mode", () => {
     expect(agentMode.description).toBe(
       "Automation mode that always runs without trigger checking",
     );
-    expect(agentMode.shouldCreateTrackingComment()).toBe(true);
+    expect(agentMode.shouldCreateTrackingComment()).toBe(false);
 
     // Tool methods return empty arrays
     expect(agentMode.getAllowedTools()).toEqual([]);
