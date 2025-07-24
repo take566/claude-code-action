@@ -19,7 +19,7 @@ jobs:
       issues: write
       id-token: write
     steps:
-      - uses: anthropics/claude-code-action@main
+      - uses: anthropics/claude-code-action@beta
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           # Tag mode (default) behavior:
@@ -39,7 +39,7 @@ jobs:
       issues: write
       id-token: write
     steps:
-      - uses: anthropics/claude-code-action@main
+      - uses: anthropics/claude-code-action@beta
         with:
           mode: agent
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
