@@ -1,6 +1,6 @@
 export type CommonFields = {
   repository: string;
-  claudeCommentId: string;
+  claudeCommentId?: string;
   triggerPhrase: string;
   triggerUsername?: string;
   customInstructions?: string;

@@ -713,6 +713,78 @@ describe("generatePrompt", () => {
     );
   });
 
+  test("should generate prompt for workflow_dispatch event with null githubData", () => {
+    const envVars: PreparedContext = {
+      repository: "owner/repo",
+      triggerPhrase: "@claude",
+      eventData: {
+        eventName: "workflow_dispatch",
+        isPR: false,
+        baseBranch: "main",
+      },
+    };
+
+    const prompt = generatePrompt(envVars, null, false);
+
+    expect(prompt).toContain("<event_type>WORKFLOW_DISPATCH</event_type>");
+    expect(prompt).toContain("<is_pr>false</is_pr>");
+    expect(prompt).toContain(
+      "<trigger_context>workflow dispatch event</trigger_context>",
+    );
+    expect(prompt).toContain(
+      "You are running in an automated context without a specific issue or PR",
+    );
+    expect(prompt).not.toContain("<pr_number>");
+    expect(prompt).not.toContain("<issue_number>");
+  });
+
+  test("should generate prompt for schedule event with null githubData", () => {
+    const envVars: PreparedContext = {
+      repository: "owner/repo",
+      triggerPhrase: "@claude",
+      triggerUsername: "github-actions[bot]",
+      eventData: {
+        eventName: "schedule",
+        isPR: false,
+        baseBranch: "main",
+      },
+    };
+
+    const prompt = generatePrompt(envVars, null, false);
+
+    expect(prompt).toContain("<event_type>SCHEDULE</event_type>");
+    expect(prompt).toContain("<is_pr>false</is_pr>");
+    expect(prompt).toContain(
+      "<trigger_context>scheduled automation event</trigger_context>",
+    );
+    expect(prompt).toContain("scheduled automation");
+    expect(prompt).toContain(
+      "<trigger_username>github-actions[bot]</trigger_username>",
+    );
+  });
+
+  test("should include direct prompt for automation events", () => {
+    const envVars: PreparedContext = {
+      repository: "owner/repo",
+      triggerPhrase: "@claude",
+      directPrompt: "Run daily maintenance tasks",
+      eventData: {
+        eventName: "workflow_dispatch",
+        isPR: false,
+        baseBranch: "main",
+      },
+    };
+
+    const prompt = generatePrompt(envVars, null, false);
+
+    expect(prompt).toContain("<direct_prompt>");
+    expect(prompt).toContain("Run daily maintenance tasks");
+    expect(prompt).toContain("</direct_prompt>");
+    expect(prompt).toContain(
+      "IMPORTANT: The following are direct instructions from the automation workflow",
+    );
+  });
+
   test("should handle pull_request event on closed PR with new branch", () => {
     const envVars: PreparedContext = {
       repository: "owner/repo",
