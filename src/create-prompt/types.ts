@@ -88,6 +88,20 @@ type PullRequestEvent = {
   baseBranch?: string;
 };
 
+type WorkflowDispatchEvent = {
+  eventName: "workflow_dispatch";
+  isPR?: false;
+  baseBranch?: string;
+  claudeBranch?: string;
+};
+
+type ScheduleEvent = {
+  eventName: "schedule";
+  isPR?: false;
+  baseBranch?: string;
+  claudeBranch?: string;
+};
+
 // Union type for all possible event types
 export type EventData =
   | PullRequestReviewCommentEvent
@@ -97,7 +111,9 @@ export type EventData =
   | IssueOpenedEvent
   | IssueAssignedEvent
   | IssueLabeledEvent
-  | PullRequestEvent;
+  | PullRequestEvent
+  | WorkflowDispatchEvent
+  | ScheduleEvent;
 
 // Combined type with separate eventData field
 export type PreparedContext = CommonFields & {

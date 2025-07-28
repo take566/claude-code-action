@@ -7,6 +7,34 @@ import type {
   PullRequestReviewEvent,
   PullRequestReviewCommentEvent,
 } from "@octokit/webhooks-types";
+
+// Custom types for GitHub Actions events that aren't webhooks
+export type WorkflowDispatchEvent = {
+  action?: never;
+  inputs?: Record<string, any>;
+  ref?: string;
+  repository: {
+    name: string;
+    owner: {
+      login: string;
+    };
+  };
+  sender: {
+    login: string;
+  };
+  workflow: string;
+};
+
+export type ScheduleEvent = {
+  action?: never;
+  schedule?: string;
+  repository: {
+    name: string;
+    owner: {
+      login: string;
+    };
+  };
+};
 import type { ModeName } from "../modes/types";
 import { DEFAULT_MODE, isValidMode } from "../modes/registry";
 
@@ -25,9 +53,11 @@ export type ParsedGitHubContext = {
     | IssueCommentEvent
     | PullRequestEvent
     | PullRequestReviewEvent
-    | PullRequestReviewCommentEvent;
-  entityNumber: number;
-  isPR: boolean;
+    | PullRequestReviewCommentEvent
+    | WorkflowDispatchEvent
+    | ScheduleEvent;
+  entityNumber?: number;
+  isPR?: boolean;
   inputs: {
     mode: ModeName;
     triggerPhrase: string;
@@ -127,6 +157,20 @@ export function parseGitHubContext(): ParsedGitHubContext {
         entityNumber: (context.payload as PullRequestReviewCommentEvent)
           .pull_request.number,
         isPR: true,
+      };
+    }
+    case "workflow_dispatch": {
+      return {
+        ...commonFields,
+        payload: context.payload as unknown as WorkflowDispatchEvent,
+        // No entityNumber or isPR for workflow_dispatch
+      };
+    }
+    case "schedule": {
+      return {
+        ...commonFields,
+        payload: context.payload as unknown as ScheduleEvent,
+        // No entityNumber or isPR for schedule
       };
     }
     default:

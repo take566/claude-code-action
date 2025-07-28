@@ -1,0 +1,49 @@
+name: Claude Automation Workflow
+
+on:
+  workflow_dispatch:
+    inputs:
+      task:
+        description: "Task for Claude to perform"
+        required: true
+        type: string
+        default: "Update dependencies and run tests"
+      branch:
+        description: "Branch to work on"
+        required: false
+        type: string
+        default: "main"
+
+jobs:
+  claude-automation:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+      id-token: write
+      actions: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.branch || 'main' }}
+
+      - name: Run Claude Code in Agent Mode
+        uses: anthropics/claude-code-action@beta
+        with:
+          mode: agent
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          override_prompt: |
+            You are running in an automated workflow context.
+
+            Task: ${{ github.event.inputs.task }}
+
+            Current branch: ${{ github.event.inputs.branch || 'main' }}
+
+            Please complete the requested task. Remember:
+            - You have full access to the repository
+            - You can make commits and push changes
+            - Focus on the specific task provided
+            - Provide clear feedback about what you're doing
