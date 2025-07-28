@@ -1,0 +1,56 @@
+name: Test Workflow Dispatch with Claude
+
+on:
+  workflow_dispatch:
+    inputs:
+      task:
+        description: 'Task for Claude to perform'
+        required: true
+        type: string
+        default: 'Analyze the codebase and provide a summary of the recent changes'
+      mode:
+        description: 'Claude mode to use'
+        required: false
+        type: choice
+        options:
+          - agent
+          - tag
+        default: agent
+
+jobs:
+  claude-automation:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+      id-token: write
+      actions: read
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+      
+      - name: Run Claude in Agent Mode
+        uses: km-anthropic/claude-code-action@km/add-agent-mode
+        with:
+          mode: ${{ github.event.inputs.mode || 'agent' }}
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          override_prompt: |
+            You have been triggered via workflow_dispatch to perform an automated task.
+            
+            Task requested: ${{ github.event.inputs.task }}
+            
+            Repository: ${{ github.repository }}
+            Current branch: ${{ github.ref_name }}
+            Actor: ${{ github.actor }}
+            
+            Please complete the requested task. Remember:
+            - You have full access to the repository
+            - You can read files, analyze code, and provide insights
+            - Focus on the specific task provided
+            - Provide clear, actionable feedback
+            
+            If the task involves making changes, be thoughtful about what changes are appropriate.
