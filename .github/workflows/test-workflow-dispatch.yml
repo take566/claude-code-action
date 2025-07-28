@@ -34,7 +34,7 @@ jobs:
           ref: ${{ github.ref }}
       
       - name: Run Claude in Agent Mode
-        uses: km-anthropic/claude-code-action@km/add-agent-mode
+        uses: km-anthropic/claude-code-action@km/add-workflow-dispatch-schedule-support
         with:
           mode: ${{ github.event.inputs.mode || 'agent' }}
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
