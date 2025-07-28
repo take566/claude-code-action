@@ -95,12 +95,7 @@ describe("parseEnvVarsWithContext", () => {
         },
       });
 
-      const result = prepareContext(
-        mockScheduleContext,
-        "",
-        "main",
-        undefined,
-      );
+      const result = prepareContext(mockScheduleContext, "", "main", undefined);
 
       expect(result.repository).toBe("test-owner/test-repo");
       expect(result.eventData.eventName).toBe("schedule");
