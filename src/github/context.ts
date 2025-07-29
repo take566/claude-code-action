@@ -48,6 +48,10 @@ const ENTITY_EVENT_NAMES = [
 
 const AUTOMATION_EVENT_NAMES = ["workflow_dispatch", "schedule"] as const;
 
+// Derive types from constants for better maintainability
+type EntityEventName = typeof ENTITY_EVENT_NAMES[number];
+type AutomationEventName = typeof AUTOMATION_EVENT_NAMES[number];
+
 // Common fields shared by all context types
 type BaseContext = {
   runId: string;
@@ -78,12 +82,7 @@ type BaseContext = {
 
 // Context for entity-based events (issues, PRs, comments)
 export type ParsedGitHubContext = BaseContext & {
-  eventName:
-    | "issues"
-    | "issue_comment"
-    | "pull_request"
-    | "pull_request_review"
-    | "pull_request_review_comment";
+  eventName: EntityEventName;
   payload:
     | IssuesEvent
     | IssueCommentEvent
@@ -96,7 +95,7 @@ export type ParsedGitHubContext = BaseContext & {
 
 // Context for automation events (workflow_dispatch, schedule)
 export type AutomationContext = BaseContext & {
-  eventName: "workflow_dispatch" | "schedule";
+  eventName: AutomationEventName;
   payload: WorkflowDispatchEvent | ScheduleEvent;
 };
 
@@ -142,67 +141,68 @@ export function parseGitHubContext(): GitHubContext {
 
   switch (context.eventName) {
     case "issues": {
+      const payload = context.payload as IssuesEvent;
       return {
         ...commonFields,
-        eventName: "issues" as const,
-        payload: context.payload as IssuesEvent,
-        entityNumber: (context.payload as IssuesEvent).issue.number,
+        eventName: "issues",
+        payload,
+        entityNumber: payload.issue.number,
         isPR: false,
-      } as ParsedGitHubContext;
+      };
     }
     case "issue_comment": {
+      const payload = context.payload as IssueCommentEvent;
       return {
         ...commonFields,
-        eventName: "issue_comment" as const,
-        payload: context.payload as IssueCommentEvent,
-        entityNumber: (context.payload as IssueCommentEvent).issue.number,
-        isPR: Boolean(
-          (context.payload as IssueCommentEvent).issue.pull_request,
-        ),
-      } as ParsedGitHubContext;
+        eventName: "issue_comment",
+        payload,
+        entityNumber: payload.issue.number,
+        isPR: Boolean(payload.issue.pull_request),
+      };
     }
     case "pull_request": {
+      const payload = context.payload as PullRequestEvent;
       return {
         ...commonFields,
-        eventName: "pull_request" as const,
-        payload: context.payload as PullRequestEvent,
-        entityNumber: (context.payload as PullRequestEvent).pull_request.number,
+        eventName: "pull_request",
+        payload,
+        entityNumber: payload.pull_request.number,
         isPR: true,
-      } as ParsedGitHubContext;
+      };
     }
     case "pull_request_review": {
+      const payload = context.payload as PullRequestReviewEvent;
       return {
         ...commonFields,
-        eventName: "pull_request_review" as const,
-        payload: context.payload as PullRequestReviewEvent,
-        entityNumber: (context.payload as PullRequestReviewEvent).pull_request
-          .number,
+        eventName: "pull_request_review",
+        payload,
+        entityNumber: payload.pull_request.number,
         isPR: true,
-      } as ParsedGitHubContext;
+      };
     }
     case "pull_request_review_comment": {
+      const payload = context.payload as PullRequestReviewCommentEvent;
       return {
         ...commonFields,
-        eventName: "pull_request_review_comment" as const,
-        payload: context.payload as PullRequestReviewCommentEvent,
-        entityNumber: (context.payload as PullRequestReviewCommentEvent)
-          .pull_request.number,
+        eventName: "pull_request_review_comment",
+        payload,
+        entityNumber: payload.pull_request.number,
         isPR: true,
-      } as ParsedGitHubContext;
+      };
     }
     case "workflow_dispatch": {
       return {
         ...commonFields,
-        eventName: "workflow_dispatch" as const,
+        eventName: "workflow_dispatch",
         payload: context.payload as unknown as WorkflowDispatchEvent,
-      } as AutomationContext;
+      };
     }
     case "schedule": {
       return {
         ...commonFields,
-        eventName: "schedule" as const,
+        eventName: "schedule",
         payload: context.payload as unknown as ScheduleEvent,
-      } as AutomationContext;
+      };
     }
     default:
       throw new Error(`Unsupported event type: ${context.eventName}`);
