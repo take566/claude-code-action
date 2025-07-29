@@ -21,7 +21,7 @@ export async function createInitialComment(
   context: ParsedGitHubContext,
 ) {
   const { owner, repo } = context.repository;
-  
+
   // This function is only called for entity-based events
   if (!context.entityNumber) {
     throw new Error("createInitialComment requires an entity number");

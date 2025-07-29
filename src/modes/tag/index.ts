@@ -56,7 +56,7 @@ export const tagMode: Mode = {
     // Check if actor is human
     await checkHumanActor(octokit.rest, context);
 
-    // Create initial tracking comment (always created for tag mode)
+    // Create initial tracking comment
     const commentData = await createInitialComment(octokit.rest, context);
     const commentId = commentData.id;
 

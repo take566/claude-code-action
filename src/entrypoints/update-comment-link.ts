@@ -24,13 +24,13 @@ async function run() {
 
     const context = parseGitHubContext();
     const { owner, repo } = context.repository;
-    
+
     // This script is only called for entity-based events
     if (!context.entityNumber) {
       throw new Error("update-comment-link requires an entity number");
     }
     const entityNumber = context.entityNumber;
-    
+
     const octokit = createOctokit(githubToken);
 
     const serverUrl = GITHUB_SERVER_URL;
