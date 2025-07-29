@@ -8,10 +8,7 @@ import { configureGitAuth } from "../../github/operations/git-config";
 import { prepareMcpConfig } from "../../mcp/install-mcp-server";
 import { fetchGitHubData } from "../../github/data/fetcher";
 import { createPrompt } from "../../create-prompt";
-import {
-  isEntityContext,
-  type ParsedGitHubContext,
-} from "../../github/context";
+import { isEntityContext } from "../../github/context";
 
 /**
  * Tag mode implementation.
@@ -59,37 +56,33 @@ export const tagMode: Mode = {
     octokit,
     githubToken,
   }: ModeOptions): Promise<ModeResult> {
-    // Tag mode handles entity-based events (issues, PRs, comments)
-    // We know context is ParsedGitHubContext for tag mode
-    const entityContext = context as ParsedGitHubContext;
+    // Tag mode only handles entity-based events
+    if (!isEntityContext(context)) {
+      throw new Error("Tag mode requires entity context");
+    }
 
     // Check if actor is human
-    await checkHumanActor(octokit.rest, entityContext);
+    await checkHumanActor(octokit.rest, context);
 
     // Create initial tracking comment
-    const commentData = await createInitialComment(octokit.rest, entityContext);
+    const commentData = await createInitialComment(octokit.rest, context);
     const commentId = commentData.id;
-
-    // Fetch GitHub data - entity events always have entityNumber and isPR
-    if (!entityContext.entityNumber || entityContext.isPR === undefined) {
-      throw new Error("Entity events must have entityNumber and isPR defined");
-    }
 
     const githubData = await fetchGitHubData({
       octokits: octokit,
-      repository: `${entityContext.repository.owner}/${entityContext.repository.repo}`,
-      prNumber: entityContext.entityNumber.toString(),
-      isPR: entityContext.isPR,
-      triggerUsername: entityContext.actor,
+      repository: `${context.repository.owner}/${context.repository.repo}`,
+      prNumber: context.entityNumber.toString(),
+      isPR: context.isPR,
+      triggerUsername: context.actor,
     });
 
     // Setup branch
-    const branchInfo = await setupBranch(octokit, githubData, entityContext);
+    const branchInfo = await setupBranch(octokit, githubData, context);
 
     // Configure git authentication if not using commit signing
     if (!context.inputs.useCommitSigning) {
       try {
-        await configureGitAuth(githubToken, entityContext, commentData.user);
+        await configureGitAuth(githubToken, context, commentData.user);
       } catch (error) {
         console.error("Failed to configure git authentication:", error);
         throw error;
@@ -97,26 +90,26 @@ export const tagMode: Mode = {
     }
 
     // Create prompt file
-    const modeContext = this.prepareContext(entityContext, {
+    const modeContext = this.prepareContext(context, {
       commentId,
       baseBranch: branchInfo.baseBranch,
       claudeBranch: branchInfo.claudeBranch,
     });
 
-    await createPrompt(tagMode, modeContext, githubData, entityContext);
+    await createPrompt(tagMode, modeContext, githubData, context);
 
     // Get MCP configuration
     const additionalMcpConfig = process.env.MCP_CONFIG || "";
     const mcpConfig = await prepareMcpConfig({
       githubToken,
-      owner: entityContext.repository.owner,
-      repo: entityContext.repository.repo,
+      owner: context.repository.owner,
+      repo: context.repository.repo,
       branch: branchInfo.claudeBranch || branchInfo.currentBranch,
       baseBranch: branchInfo.baseBranch,
       additionalMcpConfig,
       claudeCommentId: commentId.toString(),
-      allowedTools: entityContext.inputs.allowedTools,
-      context: entityContext,
+      allowedTools: context.inputs.allowedTools,
+      context,
     });
 
     core.setOutput("mcp_config", mcpConfig);
