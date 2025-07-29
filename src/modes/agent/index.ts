@@ -53,7 +53,10 @@ export const agentMode: Mode = {
       recursive: true,
     });
 
-    // Write the prompt - either override_prompt, direct_prompt, or a minimal default
+    // Write the prompt file - the base action requires a prompt_file parameter,
+    // so we must create this file even though agent mode typically uses
+    // override_prompt or direct_prompt. If neither is provided, we write
+    // a minimal prompt with just the repository information.
     const promptContent =
       context.inputs.overridePrompt ||
       context.inputs.directPrompt ||

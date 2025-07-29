@@ -350,24 +350,6 @@ export function prepareContext(
       };
       break;
 
-    case "workflow_dispatch":
-      eventData = {
-        eventName: "workflow_dispatch",
-        isPR: false,
-        ...(baseBranch && { baseBranch }),
-        ...(claudeBranch && { claudeBranch }),
-      };
-      break;
-
-    case "schedule":
-      eventData = {
-        eventName: "schedule",
-        isPR: false,
-        ...(baseBranch && { baseBranch }),
-        ...(claudeBranch && { claudeBranch }),
-      };
-      break;
-
     default:
       throw new Error(`Unsupported event type: ${eventName}`);
   }
@@ -428,18 +410,6 @@ export function getEventTypeAndContext(envVars: PreparedContext): {
         triggerContext: eventData.eventAction
           ? `pull request ${eventData.eventAction}`
           : `pull request event`,
-      };
-
-    case "workflow_dispatch":
-      return {
-        eventType: "WORKFLOW_DISPATCH",
-        triggerContext: `workflow dispatch event`,
-      };
-
-    case "schedule":
-      return {
-        eventType: "SCHEDULE",
-        triggerContext: `scheduled automation event`,
       };
 
     default:

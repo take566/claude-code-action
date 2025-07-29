@@ -34,7 +34,7 @@ async function run() {
     }
 
     // Step 4: Get mode and check trigger conditions
-    const mode = getMode(context.inputs.mode);
+    const mode = getMode(context.inputs.mode, context);
     const containsTrigger = mode.shouldTrigger(context);
 
     // Set output for action.yml to check

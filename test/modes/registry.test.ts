@@ -3,23 +3,60 @@ import { getMode, isValidMode } from "../../src/modes/registry";
 import type { ModeName } from "../../src/modes/types";
 import { tagMode } from "../../src/modes/tag";
 import { agentMode } from "../../src/modes/agent";
+import { createMockContext } from "../mockContext";
 
 describe("Mode Registry", () => {
-  test("getMode returns tag mode by default", () => {
-    const mode = getMode("tag");
+  const mockContext = createMockContext({
+    eventName: "issue_comment",
+  });
+
+  const mockWorkflowDispatchContext = createMockContext({
+    eventName: "workflow_dispatch",
+  });
+
+  const mockScheduleContext = createMockContext({
+    eventName: "schedule",
+  });
+
+  test("getMode returns tag mode for standard events", () => {
+    const mode = getMode("tag", mockContext);
     expect(mode).toBe(tagMode);
     expect(mode.name).toBe("tag");
   });
 
   test("getMode returns agent mode", () => {
-    const mode = getMode("agent");
+    const mode = getMode("agent", mockContext);
+    expect(mode).toBe(agentMode);
+    expect(mode.name).toBe("agent");
+  });
+
+  test("getMode throws error for tag mode with workflow_dispatch event", () => {
+    expect(() => getMode("tag", mockWorkflowDispatchContext)).toThrow(
+      "Tag mode cannot handle workflow_dispatch events. Use 'agent' mode for automation events.",
+    );
+  });
+
+  test("getMode throws error for tag mode with schedule event", () => {
+    expect(() => getMode("tag", mockScheduleContext)).toThrow(
+      "Tag mode cannot handle schedule events. Use 'agent' mode for automation events.",
+    );
+  });
+
+  test("getMode allows agent mode for workflow_dispatch event", () => {
+    const mode = getMode("agent", mockWorkflowDispatchContext);
+    expect(mode).toBe(agentMode);
+    expect(mode.name).toBe("agent");
+  });
+
+  test("getMode allows agent mode for schedule event", () => {
+    const mode = getMode("agent", mockScheduleContext);
     expect(mode).toBe(agentMode);
     expect(mode.name).toBe("agent");
   });
 
   test("getMode throws error for invalid mode", () => {
     const invalidMode = "invalid" as unknown as ModeName;
-    expect(() => getMode(invalidMode)).toThrow(
+    expect(() => getMode(invalidMode, mockContext)).toThrow(
       "Invalid mode 'invalid'. Valid modes are: 'tag', 'agent'. Please check your workflow configuration.",
     );
   });

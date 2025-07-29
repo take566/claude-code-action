@@ -53,17 +53,6 @@ export const tagMode: Mode = {
   }: ModeOptions): Promise<ModeResult> {
     // Tag mode handles entity-based events (issues, PRs, comments)
 
-    // Validate this mode can handle the event
-    if (
-      context.eventName === "workflow_dispatch" ||
-      context.eventName === "schedule"
-    ) {
-      throw new Error(
-        `Tag mode cannot handle ${context.eventName} events. ` +
-          `Use 'agent' mode for automation events.`,
-      );
-    }
-
     // Check if actor is human
     await checkHumanActor(octokit.rest, context);
 

@@ -13,6 +13,7 @@
 import type { Mode, ModeName } from "./types";
 import { tagMode } from "./tag";
 import { agentMode } from "./agent";
+import type { ParsedGitHubContext } from "../github/context";
 
 export const DEFAULT_MODE = "tag" as const;
 export const VALID_MODES = ["tag", "agent"] as const;
@@ -27,12 +28,13 @@ const modes = {
 } as const satisfies Record<ModeName, Mode>;
 
 /**
- * Retrieves a mode by name.
+ * Retrieves a mode by name and validates it can handle the event type.
  * @param name The mode name to retrieve
+ * @param context The GitHub context to validate against
  * @returns The requested mode
- * @throws Error if the mode is not found
+ * @throws Error if the mode is not found or cannot handle the event
  */
-export function getMode(name: ModeName): Mode {
+export function getMode(name: ModeName, context: ParsedGitHubContext): Mode {
   const mode = modes[name];
   if (!mode) {
     const validModes = VALID_MODES.join("', '");
@@ -40,6 +42,18 @@ export function getMode(name: ModeName): Mode {
       `Invalid mode '${name}'. Valid modes are: '${validModes}'. Please check your workflow configuration.`,
     );
   }
+
+  // Validate mode can handle the event type
+  if (
+    name === "tag" &&
+    (context.eventName === "workflow_dispatch" ||
+      context.eventName === "schedule")
+  ) {
+    throw new Error(
+      `Tag mode cannot handle ${context.eventName} events. Use 'agent' mode for automation events.`,
+    );
+  }
+
   return mode;
 }
 
