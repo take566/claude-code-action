@@ -1,10 +1,10 @@
-import type { ParsedGitHubContext } from "../github/context";
+import type { GitHubContext } from "../github/context";
 
 export type ModeName = "tag" | "agent";
 
 export type ModeContext = {
   mode: ModeName;
-  githubContext: ParsedGitHubContext;
+  githubContext: GitHubContext;
   commentId?: number;
   baseBranch?: string;
   claudeBranch?: string;
@@ -32,12 +32,12 @@ export type Mode = {
   /**
    * Determines if this mode should trigger based on the GitHub context
    */
-  shouldTrigger(context: ParsedGitHubContext): boolean;
+  shouldTrigger(context: GitHubContext): boolean;
 
   /**
    * Prepares the mode context with any additional data needed for prompt generation
    */
-  prepareContext(context: ParsedGitHubContext, data?: ModeData): ModeContext;
+  prepareContext(context: GitHubContext, data?: ModeData): ModeContext;
 
   /**
    * Returns the list of tools that should be allowed for this mode
@@ -64,7 +64,7 @@ export type Mode = {
 
 // Define types for mode prepare method to avoid circular dependencies
 export type ModeOptions = {
-  context: ParsedGitHubContext;
+  context: GitHubContext;
   octokit: any; // We'll use any to avoid circular dependency with Octokits
   githubToken: string;
 };

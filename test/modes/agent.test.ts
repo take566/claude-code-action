@@ -1,15 +1,14 @@
 import { describe, test, expect, beforeEach } from "bun:test";
 import { agentMode } from "../../src/modes/agent";
-import type { ParsedGitHubContext } from "../../src/github/context";
-import { createMockContext } from "../mockContext";
+import type { GitHubContext } from "../../src/github/context";
+import { createMockContext, createMockAutomationContext } from "../mockContext";
 
 describe("Agent Mode", () => {
-  let mockContext: ParsedGitHubContext;
+  let mockContext: GitHubContext;
 
   beforeEach(() => {
-    mockContext = createMockContext({
+    mockContext = createMockAutomationContext({
       eventName: "workflow_dispatch",
-      isPR: false,
     });
   });
 
@@ -34,30 +33,26 @@ describe("Agent Mode", () => {
 
   test("agent mode only triggers for workflow_dispatch and schedule events", () => {
     // Should trigger for automation events
-    const workflowDispatchContext = createMockContext({
+    const workflowDispatchContext = createMockAutomationContext({
       eventName: "workflow_dispatch",
-      isPR: false,
     });
     expect(agentMode.shouldTrigger(workflowDispatchContext)).toBe(true);
 
-    const scheduleContext = createMockContext({
+    const scheduleContext = createMockAutomationContext({
       eventName: "schedule",
-      isPR: false,
     });
     expect(agentMode.shouldTrigger(scheduleContext)).toBe(true);
 
-    // Should NOT trigger for other events
-    const otherEvents = [
-      "push",
-      "repository_dispatch",
+    // Should NOT trigger for entity events
+    const entityEvents = [
       "issue_comment",
       "pull_request",
       "pull_request_review",
       "issues",
-    ];
+    ] as const;
 
-    otherEvents.forEach((eventName) => {
-      const context = createMockContext({ eventName, isPR: false });
+    entityEvents.forEach((eventName) => {
+      const context = createMockContext({ eventName });
       expect(agentMode.shouldTrigger(context)).toBe(false);
     });
   });

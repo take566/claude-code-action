@@ -9,7 +9,7 @@ import * as core from "@actions/core";
 import { setupGitHubToken } from "../github/token";
 import { checkWritePermissions } from "../github/validation/permissions";
 import { createOctokit } from "../github/api/client";
-import { parseGitHubContext } from "../github/context";
+import { parseGitHubContext, isEntityContext } from "../github/context";
 import { getMode } from "../modes/registry";
 import { prepare } from "../prepare";
 
@@ -22,15 +22,17 @@ async function run() {
     // Step 2: Parse GitHub context (once for all operations)
     const context = parseGitHubContext();
 
-    // Step 3: Check write permissions
-    const hasWritePermissions = await checkWritePermissions(
-      octokit.rest,
-      context,
-    );
-    if (!hasWritePermissions) {
-      throw new Error(
-        "Actor does not have write permissions to the repository",
+    // Step 3: Check write permissions (only for entity contexts)
+    if (isEntityContext(context)) {
+      const hasWritePermissions = await checkWritePermissions(
+        octokit.rest,
+        context,
       );
+      if (!hasWritePermissions) {
+        throw new Error(
+          "Actor does not have write permissions to the repository",
+        );
+      }
     }
 
     // Step 4: Get mode and check trigger conditions

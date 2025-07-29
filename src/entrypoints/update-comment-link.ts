@@ -9,6 +9,8 @@ import {
 import {
   parseGitHubContext,
   isPullRequestReviewCommentEvent,
+  isEntityContext,
+  type ParsedGitHubContext,
 } from "../github/context";
 import { GITHUB_SERVER_URL } from "../github/api/config";
 import { checkAndCommitOrDeleteBranch } from "../github/operations/branch-cleanup";
@@ -23,13 +25,15 @@ async function run() {
     const triggerUsername = process.env.TRIGGER_USERNAME;
 
     const context = parseGitHubContext();
-    const { owner, repo } = context.repository;
 
     // This script is only called for entity-based events
-    if (!context.entityNumber) {
-      throw new Error("update-comment-link requires an entity number");
+    if (!isEntityContext(context)) {
+      throw new Error("update-comment-link requires an entity context");
     }
-    const entityNumber = context.entityNumber;
+
+    // TypeScript needs a type assertion here due to control flow limitations
+    const entityContext = context as ParsedGitHubContext;
+    const { owner, repo } = entityContext.repository;
 
     const octokit = createOctokit(githubToken);
 
@@ -42,7 +46,7 @@ async function run() {
     try {
       // GitHub has separate ID namespaces for review comments and issue comments
       // We need to use the correct API based on the event type
-      if (isPullRequestReviewCommentEvent(context)) {
+      if (isPullRequestReviewCommentEvent(entityContext)) {
         // For PR review comments, use the pulls API
         console.log(`Fetching PR review comment ${commentId}`);
         const { data: prComment } = await octokit.rest.pulls.getReviewComment({
@@ -71,16 +75,16 @@ async function run() {
       // If all attempts fail, try to determine more information about the comment
       console.error("Failed to fetch comment. Debug info:");
       console.error(`Comment ID: ${commentId}`);
-      console.error(`Event name: ${context.eventName}`);
-      console.error(`Entity number: ${context.entityNumber}`);
-      console.error(`Repository: ${context.repository.full_name}`);
+      console.error(`Event name: ${entityContext.eventName}`);
+      console.error(`Entity number: ${entityContext.entityNumber}`);
+      console.error(`Repository: ${entityContext.repository.full_name}`);
 
       // Try to get the PR info to understand the comment structure
       try {
         const { data: pr } = await octokit.rest.pulls.get({
           owner,
           repo,
-          pull_number: entityNumber,
+          pull_number: entityContext.entityNumber,
         });
         console.log(`PR state: ${pr.state}`);
         console.log(`PR comments count: ${pr.comments}`);
@@ -132,12 +136,12 @@ async function run() {
             comparison.total_commits > 0 ||
             (comparison.files && comparison.files.length > 0)
           ) {
-            const entityType = context.isPR ? "PR" : "Issue";
+            const entityType = entityContext.isPR ? "PR" : "Issue";
             const prTitle = encodeURIComponent(
-              `${entityType} #${context.entityNumber}: Changes from Claude`,
+              `${entityType} #${entityContext.entityNumber}: Changes from Claude`,
             );
             const prBody = encodeURIComponent(
-              `This PR addresses ${entityType.toLowerCase()} #${context.entityNumber}\n\nGenerated with [Claude Code](https://claude.ai/code)`,
+              `This PR addresses ${entityType.toLowerCase()} #${entityContext.entityNumber}\n\nGenerated with [Claude Code](https://claude.ai/code)`,
             );
             const prUrl = `${serverUrl}/${owner}/${repo}/compare/${baseBranch}...${claudeBranch}?quick_pull=1&title=${prTitle}&body=${prBody}`;
             prLink = `\n[Create a PR](${prUrl})`;

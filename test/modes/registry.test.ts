@@ -3,18 +3,18 @@ import { getMode, isValidMode } from "../../src/modes/registry";
 import type { ModeName } from "../../src/modes/types";
 import { tagMode } from "../../src/modes/tag";
 import { agentMode } from "../../src/modes/agent";
-import { createMockContext } from "../mockContext";
+import { createMockContext, createMockAutomationContext } from "../mockContext";
 
 describe("Mode Registry", () => {
   const mockContext = createMockContext({
     eventName: "issue_comment",
   });
 
-  const mockWorkflowDispatchContext = createMockContext({
+  const mockWorkflowDispatchContext = createMockAutomationContext({
     eventName: "workflow_dispatch",
   });
 
-  const mockScheduleContext = createMockContext({
+  const mockScheduleContext = createMockAutomationContext({
     eventName: "schedule",
   });
 

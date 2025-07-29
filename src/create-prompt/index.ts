@@ -125,10 +125,8 @@ export function prepareContext(
   const isPR = context.isPR;
 
   // Get PR/Issue number from entityNumber
-  const prNumber =
-    isPR && context.entityNumber ? context.entityNumber.toString() : undefined;
-  const issueNumber =
-    !isPR && context.entityNumber ? context.entityNumber.toString() : undefined;
+  const prNumber = isPR ? context.entityNumber.toString() : undefined;
+  const issueNumber = !isPR ? context.entityNumber.toString() : undefined;
 
   // Extract trigger username and comment data based on event type
   let triggerUsername: string | undefined;

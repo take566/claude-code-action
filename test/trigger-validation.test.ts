@@ -474,17 +474,6 @@ describe("checkContainsTrigger", () => {
       });
     });
   });
-
-  describe("non-matching events", () => {
-    it("should return false for non-matching event type", () => {
-      const context = createMockContext({
-        eventName: "push",
-        eventAction: "created",
-        payload: {} as any,
-      });
-      expect(checkContainsTrigger(context)).toBe(false);
-    });
-  });
 });
 
 describe("escapeRegExp", () => {

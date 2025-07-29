@@ -299,15 +299,4 @@ describe("parseEnvVarsWithContext", () => {
       expect(result.allowedTools).toBe("Tool1,Tool2");
     });
   });
-
-  test("should throw error for unsupported event type", () => {
-    process.env = BASE_ENV;
-    const unsupportedContext = createMockContext({
-      eventName: "unsupported_event",
-      eventAction: "whatever",
-    });
-    expect(() => prepareContext(unsupportedContext, "12345")).toThrow(
-      "Unsupported event type: unsupported_event",
-    );
-  });
 });

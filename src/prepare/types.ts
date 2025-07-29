@@ -1,4 +1,4 @@
-import type { ParsedGitHubContext } from "../github/context";
+import type { GitHubContext } from "../github/context";
 import type { Octokits } from "../github/api/client";
 import type { Mode } from "../modes/types";
 
@@ -13,7 +13,7 @@ export type PrepareResult = {
 };
 
 export type PrepareOptions = {
-  context: ParsedGitHubContext;
+  context: GitHubContext;
   octokit: Octokits;
   mode: Mode;
   githubToken: string;
