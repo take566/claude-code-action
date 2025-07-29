@@ -21,6 +21,12 @@ export async function createInitialComment(
   context: ParsedGitHubContext,
 ) {
   const { owner, repo } = context.repository;
+  
+  // This function is only called for entity-based events
+  if (!context.entityNumber) {
+    throw new Error("createInitialComment requires an entity number");
+  }
+  const entityNumber = context.entityNumber;
 
   const jobRunLink = createJobRunLink(owner, repo, context.runId);
   const initialBody = createCommentBody(jobRunLink);
@@ -36,7 +42,7 @@ export async function createInitialComment(
       const comments = await octokit.rest.issues.listComments({
         owner,
         repo,
-        issue_number: context.entityNumber,
+        issue_number: entityNumber,
       });
       const existingComment = comments.data.find((comment) => {
         const idMatch = comment.user?.id === CLAUDE_APP_BOT_ID;
@@ -59,7 +65,7 @@ export async function createInitialComment(
         response = await octokit.rest.issues.createComment({
           owner,
           repo,
-          issue_number: context.entityNumber,
+          issue_number: entityNumber,
           body: initialBody,
         });
       }
@@ -68,7 +74,7 @@ export async function createInitialComment(
       response = await octokit.rest.pulls.createReplyForReviewComment({
         owner,
         repo,
-        pull_number: context.entityNumber,
+        pull_number: entityNumber,
         comment_id: context.payload.comment.id,
         body: initialBody,
       });
@@ -77,7 +83,7 @@ export async function createInitialComment(
       response = await octokit.rest.issues.createComment({
         owner,
         repo,
-        issue_number: context.entityNumber,
+        issue_number: entityNumber,
         body: initialBody,
       });
     }
@@ -95,7 +101,7 @@ export async function createInitialComment(
       const response = await octokit.rest.issues.createComment({
         owner,
         repo,
-        issue_number: context.entityNumber,
+        issue_number: entityNumber,
         body: initialBody,
       });
 

@@ -56,15 +56,9 @@ export const tagMode: Mode = {
     // Check if actor is human
     await checkHumanActor(octokit.rest, context);
 
-    // Create initial tracking comment
-    let commentId: number | undefined;
-    let commentData:
-      | Awaited<ReturnType<typeof createInitialComment>>
-      | undefined;
-    if (this.shouldCreateTrackingComment()) {
-      commentData = await createInitialComment(octokit.rest, context);
-      commentId = commentData.id;
-    }
+    // Create initial tracking comment (always created for tag mode)
+    const commentData = await createInitialComment(octokit.rest, context);
+    const commentId = commentData.id;
 
     // Fetch GitHub data - entity events always have entityNumber and isPR
     if (!context.entityNumber || context.isPR === undefined) {
@@ -85,7 +79,7 @@ export const tagMode: Mode = {
     // Configure git authentication if not using commit signing
     if (!context.inputs.useCommitSigning) {
       try {
-        await configureGitAuth(githubToken, context, commentData?.user || null);
+        await configureGitAuth(githubToken, context, commentData.user);
       } catch (error) {
         console.error("Failed to configure git authentication:", error);
         throw error;
@@ -110,7 +104,7 @@ export const tagMode: Mode = {
       branch: branchInfo.claudeBranch || branchInfo.currentBranch,
       baseBranch: branchInfo.baseBranch,
       additionalMcpConfig,
-      claudeCommentId: commentId?.toString() || "",
+      claudeCommentId: commentId.toString(),
       allowedTools: context.inputs.allowedTools,
       context,
     });

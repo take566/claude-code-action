@@ -141,7 +141,7 @@ export async function prepareMcpConfig(
           GITHUB_TOKEN: process.env.ACTIONS_TOKEN,
           REPO_OWNER: owner,
           REPO_NAME: repo,
-          PR_NUMBER: context.entityNumber.toString(),
+          PR_NUMBER: context.entityNumber?.toString() || "",
           RUNNER_TEMP: process.env.RUNNER_TEMP || "/tmp",
         },
       };

@@ -125,8 +125,10 @@ export function prepareContext(
   const isPR = context.isPR;
 
   // Get PR/Issue number from entityNumber
-  const prNumber = isPR ? context.entityNumber.toString() : undefined;
-  const issueNumber = !isPR ? context.entityNumber.toString() : undefined;
+  const prNumber =
+    isPR && context.entityNumber ? context.entityNumber.toString() : undefined;
+  const issueNumber =
+    !isPR && context.entityNumber ? context.entityNumber.toString() : undefined;
 
   // Extract trigger username and comment data based on event type
   let triggerUsername: string | undefined;
@@ -801,15 +803,18 @@ export async function createPrompt(
   context: ParsedGitHubContext,
 ) {
   try {
-    // Tag mode requires a comment ID
-    if (mode.name === "tag" && !modeContext.commentId) {
-      throw new Error("Tag mode requires a comment ID for prompt generation");
+    // Prepare the context for prompt generation
+    let claudeCommentId: string = "";
+    if (mode.name === "tag") {
+      if (!modeContext.commentId) {
+        throw new Error("Tag mode requires a comment ID for prompt generation");
+      }
+      claudeCommentId = modeContext.commentId.toString();
     }
 
-    // Prepare the context for prompt generation
     const preparedContext = prepareContext(
       context,
-      modeContext.commentId?.toString() || "",
+      claudeCommentId,
       modeContext.baseBranch,
       modeContext.claudeBranch,
     );
