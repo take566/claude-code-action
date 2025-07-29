@@ -276,12 +276,12 @@ export function isIssuesAssignedEvent(
 export function isEntityContext(
   context: GitHubContext,
 ): context is ParsedGitHubContext {
-  return ENTITY_EVENT_NAMES.includes(context.eventName as any);
+  return ENTITY_EVENT_NAMES.includes(context.eventName as EntityEventName);
 }
 
 // Type guard to check if context is an automation context
 export function isAutomationContext(
   context: GitHubContext,
 ): context is AutomationContext {
-  return AUTOMATION_EVENT_NAMES.includes(context.eventName as any);
+  return AUTOMATION_EVENT_NAMES.includes(context.eventName as AutomationEventName);
 }
