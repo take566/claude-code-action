@@ -265,7 +265,13 @@ export function isIssuesAssignedEvent(
 export function isEntityContext(
   context: GitHubContext,
 ): context is ParsedGitHubContext {
-  return "entityNumber" in context && "isPR" in context;
+  return (
+    context.eventName === "issues" ||
+    context.eventName === "issue_comment" ||
+    context.eventName === "pull_request" ||
+    context.eventName === "pull_request_review" ||
+    context.eventName === "pull_request_review_comment"
+  );
 }
 
 // Type guard to check if context is an automation context
