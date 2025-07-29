@@ -34,16 +34,6 @@ const BASE_ALLOWED_TOOLS = [
 ];
 const DISALLOWED_TOOLS = ["WebSearch", "WebFetch"];
 
-function getEntityNumberXml(eventData: EventData): string {
-  if (eventData.isPR && "prNumber" in eventData) {
-    return `<pr_number>${eventData.prNumber}</pr_number>`;
-  }
-  if ("issueNumber" in eventData) {
-    return `<issue_number>${eventData.issueNumber}</issue_number>`;
-  }
-  return "";
-}
-
 export function buildAllowedToolsString(
   customAllowedTools?: string[],
   includeActionsTools: boolean = false,
@@ -135,10 +125,8 @@ export function prepareContext(
   const isPR = context.isPR;
 
   // Get PR/Issue number from entityNumber
-  const prNumber =
-    isPR && context.entityNumber ? context.entityNumber.toString() : undefined;
-  const issueNumber =
-    !isPR && context.entityNumber ? context.entityNumber.toString() : undefined;
+  const prNumber = isPR ? context.entityNumber.toString() : undefined;
+  const issueNumber = !isPR ? context.entityNumber.toString() : undefined;
 
   // Extract trigger username and comment data based on event type
   let triggerUsername: string | undefined;
@@ -551,7 +539,6 @@ export function generatePrompt(
     );
   }
 
-  const { eventData } = context;
   const {
     contextData,
     comments,
@@ -559,10 +546,11 @@ export function generatePrompt(
     reviewData,
     imageUrlMap,
   } = githubData;
+  const { eventData } = context;
 
   const { eventType, triggerContext } = getEventTypeAndContext(context);
 
-  const formattedContext = formatContext(contextData, eventData.isPR!);
+  const formattedContext = formatContext(contextData, eventData.isPR);
   const formattedComments = formatComments(comments, imageUrlMap);
   const formattedReviewComments = eventData.isPR
     ? formatReviewComments(reviewData, imageUrlMap)
@@ -611,10 +599,14 @@ ${eventData.isPR ? formattedChangedFiles || "No files changed" : ""}
 <is_pr>${eventData.isPR ? "true" : "false"}</is_pr>
 <trigger_context>${triggerContext}</trigger_context>
 <repository>${context.repository}</repository>
-${getEntityNumberXml(eventData)}
+${
+  eventData.isPR
+    ? `<pr_number>${eventData.prNumber}</pr_number>`
+    : `<issue_number>${eventData.issueNumber ?? ""}</issue_number>`
+}
 <claude_comment_id>${context.claudeCommentId}</claude_comment_id>
 <trigger_username>${context.triggerUsername ?? "Unknown"}</trigger_username>
-<trigger_display_name>${githubData?.triggerDisplayName ?? context.triggerUsername ?? "Unknown"}</trigger_display_name>
+<trigger_display_name>${githubData.triggerDisplayName ?? context.triggerUsername ?? "Unknown"}</trigger_display_name>
 <trigger_phrase>${context.triggerPhrase}</trigger_phrase>
 ${
   (eventData.eventName === "issue_comment" ||
