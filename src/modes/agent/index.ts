@@ -1,6 +1,7 @@
 import * as core from "@actions/core";
 import { mkdir, writeFile } from "fs/promises";
 import type { Mode, ModeOptions, ModeResult } from "../types";
+import { isAutomationContext } from "../../github/context";
 
 /**
  * Agent mode implementation.
@@ -15,10 +16,7 @@ export const agentMode: Mode = {
 
   shouldTrigger(context) {
     // Only trigger for automation events
-    return (
-      context.eventName === "workflow_dispatch" ||
-      context.eventName === "schedule"
-    );
+    return isAutomationContext(context);
   },
 
   prepareContext(context) {

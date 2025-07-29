@@ -37,6 +37,17 @@ export type ScheduleEvent = {
 import type { ModeName } from "../modes/types";
 import { DEFAULT_MODE, isValidMode } from "../modes/registry";
 
+// Event name constants for better maintainability
+const ENTITY_EVENT_NAMES = [
+  "issues",
+  "issue_comment",
+  "pull_request",
+  "pull_request_review",
+  "pull_request_review_comment",
+] as const;
+
+const AUTOMATION_EVENT_NAMES = ["workflow_dispatch", "schedule"] as const;
+
 // Common fields shared by all context types
 type BaseContext = {
   runId: string;
@@ -265,21 +276,12 @@ export function isIssuesAssignedEvent(
 export function isEntityContext(
   context: GitHubContext,
 ): context is ParsedGitHubContext {
-  return (
-    context.eventName === "issues" ||
-    context.eventName === "issue_comment" ||
-    context.eventName === "pull_request" ||
-    context.eventName === "pull_request_review" ||
-    context.eventName === "pull_request_review_comment"
-  );
+  return ENTITY_EVENT_NAMES.includes(context.eventName as any);
 }
 
 // Type guard to check if context is an automation context
 export function isAutomationContext(
   context: GitHubContext,
 ): context is AutomationContext {
-  return (
-    context.eventName === "workflow_dispatch" ||
-    context.eventName === "schedule"
-  );
+  return AUTOMATION_EVENT_NAMES.includes(context.eventName as any);
 }
