@@ -283,5 +283,7 @@ export function isEntityContext(
 export function isAutomationContext(
   context: GitHubContext,
 ): context is AutomationContext {
-  return AUTOMATION_EVENT_NAMES.includes(context.eventName as AutomationEventName);
+  return AUTOMATION_EVENT_NAMES.includes(
+    context.eventName as AutomationEventName,
+  );
 }
