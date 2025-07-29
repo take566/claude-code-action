@@ -13,70 +13,52 @@ describe("Agent Mode", () => {
     });
   });
 
-  test("agent mode has correct properties and behavior", () => {
-    // Basic properties
+  test("agent mode has correct properties", () => {
     expect(agentMode.name).toBe("agent");
     expect(agentMode.description).toBe(
-      "Automation mode that always runs without trigger checking",
+      "Automation mode for workflow_dispatch and schedule events",
     );
     expect(agentMode.shouldCreateTrackingComment()).toBe(false);
-
-    // Tool methods return empty arrays
     expect(agentMode.getAllowedTools()).toEqual([]);
     expect(agentMode.getDisallowedTools()).toEqual([]);
-
-    // Always triggers regardless of context
-    const contextWithoutTrigger = createMockContext({
-      eventName: "workflow_dispatch",
-      isPR: false,
-      inputs: {
-        ...createMockContext().inputs,
-        triggerPhrase: "@claude",
-      },
-      payload: {} as any,
-    });
-    expect(agentMode.shouldTrigger(contextWithoutTrigger)).toBe(true);
   });
 
-  test("prepareContext includes all required data", () => {
-    const data = {
-      commentId: 789,
-      baseBranch: "develop",
-      claudeBranch: "claude/automated-task",
-    };
-
-    const context = agentMode.prepareContext(mockContext, data);
-
-    expect(context.mode).toBe("agent");
-    expect(context.githubContext).toBe(mockContext);
-    expect(context.commentId).toBe(789);
-    expect(context.baseBranch).toBe("develop");
-    expect(context.claudeBranch).toBe("claude/automated-task");
-  });
-
-  test("prepareContext works without data", () => {
+  test("prepareContext returns minimal data", () => {
     const context = agentMode.prepareContext(mockContext);
 
     expect(context.mode).toBe("agent");
     expect(context.githubContext).toBe(mockContext);
-    expect(context.commentId).toBeUndefined();
-    expect(context.baseBranch).toBeUndefined();
-    expect(context.claudeBranch).toBeUndefined();
+    // Agent mode doesn't use comment tracking or branch management
+    expect(Object.keys(context)).toEqual(["mode", "githubContext"]);
   });
 
-  test("agent mode triggers for all event types", () => {
-    const events = [
+  test("agent mode only triggers for workflow_dispatch and schedule events", () => {
+    // Should trigger for automation events
+    const workflowDispatchContext = createMockContext({
+      eventName: "workflow_dispatch",
+      isPR: false,
+    });
+    expect(agentMode.shouldTrigger(workflowDispatchContext)).toBe(true);
+
+    const scheduleContext = createMockContext({
+      eventName: "schedule",
+      isPR: false,
+    });
+    expect(agentMode.shouldTrigger(scheduleContext)).toBe(true);
+
+    // Should NOT trigger for other events
+    const otherEvents = [
       "push",
-      "schedule",
-      "workflow_dispatch",
       "repository_dispatch",
       "issue_comment",
       "pull_request",
+      "pull_request_review",
+      "issues",
     ];
 
-    events.forEach((eventName) => {
+    otherEvents.forEach((eventName) => {
       const context = createMockContext({ eventName, isPR: false });
-      expect(agentMode.shouldTrigger(context)).toBe(true);
+      expect(agentMode.shouldTrigger(context)).toBe(false);
     });
   });
 });

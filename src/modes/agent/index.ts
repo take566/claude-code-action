@@ -1,34 +1,31 @@
 import * as core from "@actions/core";
 import { mkdir, writeFile } from "fs/promises";
 import type { Mode, ModeOptions, ModeResult } from "../types";
-import { prepareMcpConfig } from "../../mcp/install-mcp-server";
-import { exportToolEnvironmentVariables } from "../../tools/export";
 
 /**
  * Agent mode implementation.
  *
- * This mode is designed for automation and workflow_dispatch scenarios.
- * It always triggers (no checking), allows highly flexible configurations,
- * and works well with override_prompt for custom workflows.
- *
- * In the future, this mode could restrict certain tools for safety in automation contexts,
- * e.g., disallowing WebSearch or limiting file system operations.
+ * This mode is specifically designed for automation events (workflow_dispatch and schedule).
+ * It bypasses the standard trigger checking and comment tracking used by tag mode,
+ * making it ideal for scheduled tasks and manual workflow runs.
  */
 export const agentMode: Mode = {
   name: "agent",
-  description: "Automation mode that always runs without trigger checking",
+  description: "Automation mode for workflow_dispatch and schedule events",
 
-  shouldTrigger() {
-    return true;
+  shouldTrigger(context) {
+    // Only trigger for automation events
+    return (
+      context.eventName === "workflow_dispatch" ||
+      context.eventName === "schedule"
+    );
   },
 
-  prepareContext(context, data) {
+  prepareContext(context) {
+    // Agent mode doesn't use comment tracking or branch management
     return {
       mode: "agent",
       githubContext: context,
-      commentId: data?.commentId,
-      baseBranch: data?.baseBranch,
-      claudeBranch: data?.claudeBranch,
     };
   },
 
@@ -44,9 +41,8 @@ export const agentMode: Mode = {
     return false;
   },
 
-  async prepare({ context, githubToken }: ModeOptions): Promise<ModeResult> {
-    // Agent mode is designed for automation events (workflow_dispatch, schedule)
-    // and potentially other events where we want full automation without tracking
+  async prepare({ context }: ModeOptions): Promise<ModeResult> {
+    // Agent mode handles automation events (workflow_dispatch, schedule) only
 
     // Create prompt directory
     await mkdir(`${process.env.RUNNER_TEMP}/claude-prompts`, {
@@ -67,24 +63,48 @@ export const agentMode: Mode = {
       promptContent,
     );
 
-    // Export tool environment variables
-    exportToolEnvironmentVariables(agentMode, context);
+    // Export tool environment variables for agent mode
+    const baseTools = [
+      "Edit",
+      "MultiEdit",
+      "Glob",
+      "Grep",
+      "LS",
+      "Read",
+      "Write",
+    ];
 
-    // Get MCP configuration
+    // Add user-specified tools
+    const allowedTools = [...baseTools, ...context.inputs.allowedTools];
+    const disallowedTools = [
+      "WebSearch",
+      "WebFetch",
+      ...context.inputs.disallowedTools,
+    ];
+
+    core.exportVariable("ALLOWED_TOOLS", allowedTools.join(","));
+    core.exportVariable("DISALLOWED_TOOLS", disallowedTools.join(","));
+
+    // Agent mode uses a minimal MCP configuration
+    // We don't need comment servers or PR-specific tools for automation
+    const mcpConfig: any = {
+      mcpServers: {},
+    };
+
+    // Add user-provided additional MCP config if any
     const additionalMcpConfig = process.env.MCP_CONFIG || "";
-    const mcpConfig = await prepareMcpConfig({
-      githubToken,
-      owner: context.repository.owner,
-      repo: context.repository.repo,
-      branch: "", // No specific branch for agent mode
-      baseBranch: "", // No base branch needed
-      additionalMcpConfig,
-      claudeCommentId: "",
-      allowedTools: context.inputs.allowedTools,
-      context,
-    });
+    if (additionalMcpConfig.trim()) {
+      try {
+        const additional = JSON.parse(additionalMcpConfig);
+        if (additional && typeof additional === "object") {
+          Object.assign(mcpConfig, additional);
+        }
+      } catch (error) {
+        core.warning(`Failed to parse additional MCP config: ${error}`);
+      }
+    }
 
-    core.setOutput("mcp_config", mcpConfig);
+    core.setOutput("mcp_config", JSON.stringify(mcpConfig));
 
     return {
       commentId: undefined,
@@ -93,7 +113,7 @@ export const agentMode: Mode = {
         currentBranch: "",
         claudeBranch: undefined,
       },
-      mcpConfig,
+      mcpConfig: JSON.stringify(mcpConfig),
     };
   },
 };
