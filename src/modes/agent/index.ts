@@ -1,4 +1,8 @@
-import type { Mode } from "../types";
+import * as core from "@actions/core";
+import { mkdir, writeFile } from "fs/promises";
+import type { Mode, ModeOptions, ModeResult } from "../types";
+import { prepareMcpConfig } from "../../mcp/install-mcp-server";
+import { exportToolEnvironmentVariables } from "../../tools/export";
 
 /**
  * Agent mode implementation.
@@ -38,5 +42,55 @@ export const agentMode: Mode = {
 
   shouldCreateTrackingComment() {
     return false;
+  },
+
+  async prepare({ context, githubToken }: ModeOptions): Promise<ModeResult> {
+    // Agent mode is designed for automation events (workflow_dispatch, schedule)
+    // and potentially other events where we want full automation without tracking
+
+    // Create prompt directory
+    await mkdir(`${process.env.RUNNER_TEMP}/claude-prompts`, {
+      recursive: true,
+    });
+
+    // Write the prompt - either override_prompt, direct_prompt, or a minimal default
+    const promptContent =
+      context.inputs.overridePrompt ||
+      context.inputs.directPrompt ||
+      `Repository: ${context.repository.owner}/${context.repository.repo}`;
+
+    await writeFile(
+      `${process.env.RUNNER_TEMP}/claude-prompts/claude-prompt.txt`,
+      promptContent,
+    );
+
+    // Export tool environment variables
+    exportToolEnvironmentVariables(agentMode, context);
+
+    // Get MCP configuration
+    const additionalMcpConfig = process.env.MCP_CONFIG || "";
+    const mcpConfig = await prepareMcpConfig({
+      githubToken,
+      owner: context.repository.owner,
+      repo: context.repository.repo,
+      branch: "", // No specific branch for agent mode
+      baseBranch: "", // No base branch needed
+      additionalMcpConfig,
+      claudeCommentId: "",
+      allowedTools: context.inputs.allowedTools,
+      context,
+    });
+
+    core.setOutput("mcp_config", mcpConfig);
+
+    return {
+      commentId: undefined,
+      branchInfo: {
+        baseBranch: "",
+        currentBranch: "",
+        claudeBranch: undefined,
+      },
+      mcpConfig,
+    };
   },
 };

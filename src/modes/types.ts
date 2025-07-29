@@ -53,4 +53,28 @@ export type Mode = {
    * Determines if this mode should create a tracking comment
    */
   shouldCreateTrackingComment(): boolean;
+
+  /**
+   * Prepares the GitHub environment for this mode.
+   * Each mode decides how to handle different event types.
+   * @returns PrepareResult with commentId, branchInfo, and mcpConfig
+   */
+  prepare(options: ModeOptions): Promise<ModeResult>;
+};
+
+// Define types for mode prepare method to avoid circular dependencies
+export type ModeOptions = {
+  context: ParsedGitHubContext;
+  octokit: any; // We'll use any to avoid circular dependency with Octokits
+  githubToken: string;
+};
+
+export type ModeResult = {
+  commentId?: number;
+  branchInfo: {
+    baseBranch: string;
+    claudeBranch?: string;
+    currentBranch: string;
+  };
+  mcpConfig: string;
 };
