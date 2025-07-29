@@ -87,7 +87,6 @@ export type ParsedGitHubContext = BaseContext & {
 export type AutomationContext = BaseContext & {
   eventName: "workflow_dispatch" | "schedule";
   payload: WorkflowDispatchEvent | ScheduleEvent;
-  // No entityNumber or isPR
 };
 
 // Union type for all contexts
