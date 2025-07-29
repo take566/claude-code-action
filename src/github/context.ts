@@ -49,8 +49,8 @@ const ENTITY_EVENT_NAMES = [
 const AUTOMATION_EVENT_NAMES = ["workflow_dispatch", "schedule"] as const;
 
 // Derive types from constants for better maintainability
-type EntityEventName = typeof ENTITY_EVENT_NAMES[number];
-type AutomationEventName = typeof AUTOMATION_EVENT_NAMES[number];
+type EntityEventName = (typeof ENTITY_EVENT_NAMES)[number];
+type AutomationEventName = (typeof AUTOMATION_EVENT_NAMES)[number];
 
 // Common fields shared by all context types
 type BaseContext = {
