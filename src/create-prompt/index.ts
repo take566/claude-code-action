@@ -449,12 +449,11 @@ export function getEventTypeAndContext(envVars: PreparedContext): {
 
 function getCommitInstructions(
   eventData: EventData,
-  githubData: FetchDataResult | null,
+  githubData: FetchDataResult,
   context: PreparedContext,
   useCommitSigning: boolean,
 ): string {
   const coAuthorLine =
-    githubData &&
     (githubData.triggerDisplayName ?? context.triggerUsername !== "Unknown")
       ? `Co-authored-by: ${githubData.triggerDisplayName ?? context.triggerUsername} <${context.triggerUsername}@users.noreply.github.com>`
       : "";
@@ -509,26 +508,8 @@ function getCommitInstructions(
 function substitutePromptVariables(
   template: string,
   context: PreparedContext,
-  githubData: FetchDataResult | null,
+  githubData: FetchDataResult,
 ): string {
-  // Handle automation events without GitHub data
-  if (!githubData) {
-    const { eventData } = context;
-    const variables: Record<string, string> = {
-      EVENT_TYPE: eventData.eventName,
-      REPOSITORY: context.repository,
-      TRIGGER_USERNAME: context.triggerUsername ?? "automation",
-      CURRENT_BRANCH: eventData.claudeBranch || eventData.baseBranch || "main",
-      BASE_BRANCH: eventData.baseBranch || "main",
-    };
-
-    return Object.entries(variables).reduce(
-      (prompt, [key, value]) =>
-        prompt.replace(new RegExp(`{{${key}}}`, "g"), value),
-      template,
-    );
-  }
-
   const { contextData, comments, reviewData, changedFilesWithSHA } = githubData;
   const { eventData } = context;
 
@@ -589,7 +570,7 @@ function substitutePromptVariables(
 
 export function generatePrompt(
   context: PreparedContext,
-  githubData: FetchDataResult | null,
+  githubData: FetchDataResult,
   useCommitSigning: boolean,
 ): string {
   if (context.overridePrompt) {
@@ -601,58 +582,6 @@ export function generatePrompt(
   }
 
   const { eventData } = context;
-
-  // Handle automation events that don't have GitHub data
-  if (!githubData) {
-    // For automation events, we have minimal context
-    const { eventType, triggerContext } = getEventTypeAndContext(context);
-
-    let promptContent = `You are Claude, an AI assistant designed to help with GitHub ${eventData.eventName === "workflow_dispatch" ? "workflow dispatch" : "scheduled automation"} tasks. Think carefully as you analyze the context and respond appropriately. Here's the context for your current task:
-
-<formatted_context>
-Repository: ${context.repository}
-Event Type: ${eventData.eventName}
-Current Branch: ${eventData.claudeBranch || eventData.baseBranch || "main"}
-Base Branch: ${eventData.baseBranch || "main"}
-Actor: ${context.triggerUsername ?? "automation"}
-</formatted_context>
-
-<event_type>${eventType}</event_type>
-<is_pr>false</is_pr>
-<trigger_context>${triggerContext}</trigger_context>
-<repository>${context.repository}</repository>
-<trigger_username>${context.triggerUsername ?? "automation"}</trigger_username>
-${
-  context.directPrompt
-    ? `<direct_prompt>
-IMPORTANT: The following are direct instructions from the automation workflow:
-
-${sanitizeContent(context.directPrompt)}
-</direct_prompt>`
-    : ""
-}
-
-<instructions>
-You have been triggered by an automated workflow. Follow these guidelines:
-
-1. **Context**: You are running in an automated context without a specific issue or PR.
-2. **Branch**: You are currently on the ${eventData.claudeBranch || eventData.baseBranch || "main"} branch.
-3. **Tools**: You have access to file system and Git tools to make changes.
-${
-  useCommitSigning
-    ? "4. **Commits**: Use the MCP file operations server for signed commits."
-    : "4. **Commits**: You can commit changes directly using Git."
-}
-5. **Scope**: Focus on the task described${context.directPrompt ? " in the direct_prompt above" : ""}.
-
-Please proceed with the automated task.
-</instructions>
-
-${context.customInstructions || ""}`;
-
-    return promptContent;
-  }
-
   const {
     contextData,
     comments,
@@ -663,7 +592,7 @@ ${context.customInstructions || ""}`;
 
   const { eventType, triggerContext } = getEventTypeAndContext(context);
 
-  const formattedContext = formatContext(contextData, eventData.isPR ?? false);
+  const formattedContext = formatContext(contextData, eventData.isPR!);
   const formattedComments = formatComments(comments, imageUrlMap);
   const formattedReviewComments = eventData.isPR
     ? formatReviewComments(reviewData, imageUrlMap)
@@ -709,7 +638,7 @@ ${eventData.isPR ? formattedChangedFiles || "No files changed" : ""}
 </changed_files>${imagesInfo}
 
 <event_type>${eventType}</event_type>
-<is_pr>${(eventData.isPR ?? false) ? "true" : "false"}</is_pr>
+<is_pr>${eventData.isPR ? "true" : "false"}</is_pr>
 <trigger_context>${triggerContext}</trigger_context>
 <repository>${context.repository}</repository>
 ${getEntityNumberXml(eventData)}
@@ -906,7 +835,7 @@ f. If you are unable to complete certain steps, such as running a linter or test
 export async function createPrompt(
   mode: Mode,
   modeContext: ModeContext,
-  githubData: FetchDataResult | null,
+  githubData: FetchDataResult,
   context: ParsedGitHubContext,
 ) {
   try {
