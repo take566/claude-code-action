@@ -115,7 +115,7 @@ export async function prepareMcpConfig(
     const hasActionsReadPermission =
       context.inputs.additionalPermissions.get("actions") === "read";
 
-    if ('isPR' in context && context.isPR && hasActionsReadPermission) {
+    if ("isPR" in context && context.isPR && hasActionsReadPermission) {
       // Verify the token actually has actions:read permission
       const actuallyHasPermission = await checkActionsReadPermission(
         process.env.ACTIONS_TOKEN || "",
@@ -141,7 +141,10 @@ export async function prepareMcpConfig(
           GITHUB_TOKEN: process.env.ACTIONS_TOKEN,
           REPO_OWNER: owner,
           REPO_NAME: repo,
-          PR_NUMBER: 'entityNumber' in context ? context.entityNumber?.toString() || "" : "",
+          PR_NUMBER:
+            "entityNumber" in context
+              ? context.entityNumber?.toString() || ""
+              : "",
           RUNNER_TEMP: process.env.RUNNER_TEMP || "/tmp",
         },
       };
