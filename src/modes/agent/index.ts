@@ -1,7 +1,6 @@
 import * as core from "@actions/core";
 import type { Mode, ModeOptions, ModeResult } from "../types";
 import { isAutomationContext } from "../../github/context";
-import type { PreparedContext } from "../../create-prompt/types";
 import { prepareMcpConfig } from "../../mcp/install-mcp-server";
 
 /**
@@ -93,19 +92,5 @@ export const agentMode: Mode = {
       },
       mcpConfig: mcpConfig,
     };
-  },
-
-  generatePrompt(context: PreparedContext): string {
-    // Agent mode uses override or direct prompt, no GitHub data needed
-    if (context.overridePrompt) {
-      return context.overridePrompt;
-    }
-
-    if (context.directPrompt) {
-      return context.directPrompt;
-    }
-
-    // Minimal fallback - repository is a string in PreparedContext
-    return `Repository: ${context.repository}`;
   },
 };
