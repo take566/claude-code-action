@@ -247,7 +247,7 @@ runs:
       shell: bash
       run: |
         # Try to format the turns, but if it fails, dump the raw JSON
-        if bun run ${{ github.action_path }}/src/entrypoints/format-turns.ts "${{ steps.claude-code.outputs.execution_file }}" >> $GITHUB_STEP_SUMMARY 2>/dev/null; then
+        if bun run ${{ github.action_path }}/src/entrypoints/format-turns.ts "${{ steps.claude.outputs.execution_file }}" >> $GITHUB_STEP_SUMMARY 2>/dev/null; then
           echo "Successfully formatted Claude Code report"
         else
           echo "## Claude Code Report (Raw Output)" >> $GITHUB_STEP_SUMMARY
