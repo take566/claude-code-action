@@ -80,6 +80,19 @@ async function run() {
       githubToken,
     });
 
+    // Set critical outputs immediately after prepare completes
+    // This ensures they're available for cleanup even if Claude fails
+    core.setOutput("GITHUB_TOKEN", githubToken);
+    core.setOutput("mcp_config", prepareResult.mcpConfig);
+    if (prepareResult.branchInfo.claudeBranch) {
+      core.setOutput("branch_name", prepareResult.branchInfo.claudeBranch);
+      core.setOutput("CLAUDE_BRANCH", prepareResult.branchInfo.claudeBranch);
+    }
+    core.setOutput("BASE_BRANCH", prepareResult.branchInfo.baseBranch);
+    if (prepareResult.commentId) {
+      core.setOutput("claude_comment_id", prepareResult.commentId.toString());
+    }
+
     // Step 7: The mode.prepare() call already created the prompt and set up tools
     // We need to get the allowed/disallowed tools from environment variables
     // TODO: Update Mode interface to return tools from prepare() instead of relying on env vars
@@ -102,40 +115,21 @@ async function run() {
       CLAUDE_CODE_ACTION: "1",
     };
 
-    // Run Claude using the shared core function
-    try {
-      await runClaudeCore({
-        promptFile,
-        settings: process.env.SETTINGS,
-        allowedTools,
-        disallowedTools,
-        maxTurns: process.env.MAX_TURNS,
-        mcpConfig: prepareResult.mcpConfig,
-        systemPrompt: "",
-        appendSystemPrompt: "",
-        claudeEnv: process.env.CLAUDE_ENV,
-        fallbackModel: process.env.FALLBACK_MODEL,
-        model: process.env.ANTHROPIC_MODEL || process.env.MODEL,
-        timeoutMinutes: process.env.TIMEOUT_MINUTES || "30",
-        env: claudeEnvObject,
-      });
-    } catch (claudeError) {
-      // The outputs should already be set by runClaudeCore
-      // Just re-throw to handle in outer catch
-      throw claudeError;
-    }
-
-    // Set outputs that were previously set by prepare step
-    core.setOutput("GITHUB_TOKEN", githubToken);
-    core.setOutput("mcp_config", prepareResult.mcpConfig);
-    if (prepareResult.branchInfo.claudeBranch) {
-      core.setOutput("branch_name", prepareResult.branchInfo.claudeBranch);
-      core.setOutput("CLAUDE_BRANCH", prepareResult.branchInfo.claudeBranch);
-    }
-    core.setOutput("BASE_BRANCH", prepareResult.branchInfo.baseBranch);
-    if (prepareResult.commentId) {
-      core.setOutput("claude_comment_id", prepareResult.commentId.toString());
-    }
+    await runClaudeCore({
+      promptFile,
+      settings: process.env.SETTINGS,
+      allowedTools,
+      disallowedTools,
+      maxTurns: process.env.MAX_TURNS,
+      mcpConfig: prepareResult.mcpConfig,
+      systemPrompt: "",
+      appendSystemPrompt: "",
+      claudeEnv: process.env.CLAUDE_ENV,
+      fallbackModel: process.env.FALLBACK_MODEL,
+      model: process.env.ANTHROPIC_MODEL || process.env.MODEL,
+      timeoutMinutes: process.env.TIMEOUT_MINUTES || "30",
+      env: claudeEnvObject,
+    });
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     core.setFailed(`Action failed with error: ${errorMessage}`);
