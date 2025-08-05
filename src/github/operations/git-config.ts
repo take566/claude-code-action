@@ -33,7 +33,7 @@ export async function configureGitAuth(
   if (user) {
     const botName = user.login;
     const botId = user.id;
-    console.log(`Setting git user as ${botName}...`);
+    console.log(`Setting git user as ${botName} (id: ${botId})...`);
     await $`git config user.name "${botName}"`;
     await $`git config user.email "${botId}+${botName}@${noreplyDomain}"`;
     console.log(`✓ Set git user as ${botName}`);
