@@ -12,6 +12,7 @@ import type {
 
 const defaultInputs = {
   mode: "tag" as const,
+  prompt: "",
   triggerPhrase: "/claude",
   assigneeTrigger: "",
   labelTrigger: "",

@@ -89,10 +89,14 @@ export const reviewMode: Mode = {
     context: PreparedContext,
     githubData: FetchDataResult,
   ): string {
-    // Support overridePrompt
-    if (context.overridePrompt) {
-      return context.overridePrompt;
+    // Support v1.0 unified prompt or legacy overridePrompt
+    const userPrompt = context.prompt || context.overridePrompt;
+    if (userPrompt) {
+      return userPrompt;
     }
+    
+    // Default to /review slash command content
+    // This will be expanded by the slash command system
 
     const {
       contextData,

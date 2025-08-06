@@ -3,6 +3,7 @@
 import * as core from "@actions/core";
 import { writeFile, mkdir } from "fs/promises";
 import type { FetchDataResult } from "../github/data/fetcher";
+import { resolveSlashCommand } from "../slash-commands/loader";
 import {
   formatContext,
   formatBody,
@@ -118,6 +119,7 @@ export function prepareContext(
   const customInstructions = context.inputs.customInstructions;
   const allowedTools = context.inputs.allowedTools;
   const disallowedTools = context.inputs.disallowedTools;
+  const prompt = context.inputs.prompt; // v1.0: Unified prompt field
   const directPrompt = context.inputs.directPrompt;
   const overridePrompt = context.inputs.overridePrompt;
   const isPR = context.isPR;
@@ -157,6 +159,7 @@ export function prepareContext(
     ...(disallowedTools.length > 0 && {
       disallowedTools: disallowedTools.join(","),
     }),
+    ...(prompt && { prompt }),
     ...(directPrompt && { directPrompt }),
     ...(overridePrompt && { overridePrompt }),
     ...(claudeBranch && { claudeBranch }),
@@ -524,21 +527,50 @@ function substitutePromptVariables(
   return result;
 }
 
-export function generatePrompt(
+export async function generatePrompt(
   context: PreparedContext,
   githubData: FetchDataResult,
   useCommitSigning: boolean,
   mode: Mode,
-): string {
-  if (context.overridePrompt) {
-    return substitutePromptVariables(
-      context.overridePrompt,
-      context,
-      githubData,
-    );
+): Promise<string> {
+  // Check for unified prompt field first (v1.0)
+  let prompt = context.prompt || context.overridePrompt || context.directPrompt || "";
+  
+  // Handle slash commands
+  if (prompt.startsWith("/")) {
+    const variables = {
+      repository: context.repository,
+      pr_number: context.eventData.isPR && 'prNumber' in context.eventData ? context.eventData.prNumber : "",
+      issue_number: !context.eventData.isPR && 'issueNumber' in context.eventData ? context.eventData.issueNumber : "",
+      branch: context.eventData.claudeBranch || "",
+      base_branch: context.eventData.baseBranch || "",
+      trigger_user: context.triggerUsername,
+    };
+    
+    const resolved = await resolveSlashCommand(prompt, variables);
+    
+    // Apply any tools from the slash command
+    if (resolved.tools && resolved.tools.length > 0) {
+      const currentAllowedTools = process.env.ALLOWED_TOOLS || "";
+      const newTools = resolved.tools.join(",");
+      const combinedTools = currentAllowedTools ? `${currentAllowedTools},${newTools}` : newTools;
+      core.exportVariable("ALLOWED_TOOLS", combinedTools);
+    }
+    
+    // Apply any settings from the slash command
+    if (resolved.settings) {
+      core.exportVariable("SLASH_COMMAND_SETTINGS", JSON.stringify(resolved.settings));
+    }
+    
+    prompt = resolved.expandedPrompt;
   }
-
-  // Use the mode's prompt generator
+  
+  // If we have a prompt, use it (with variable substitution)
+  if (prompt) {
+    return substitutePromptVariables(prompt, context, githubData);
+  }
+  
+  // Otherwise use the mode's default prompt generator
   return mode.generatePrompt(context, githubData, useCommitSigning);
 }
 
@@ -840,8 +872,8 @@ export async function createPrompt(
       recursive: true,
     });
 
-    // Generate the prompt directly
-    const promptContent = generatePrompt(
+    // Generate the prompt directly (now async due to slash commands)
+    const promptContent = await generatePrompt(
       preparedContext,
       githubData,
       context.inputs.useCommitSigning,

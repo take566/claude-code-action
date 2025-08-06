@@ -141,7 +141,7 @@ describe("generatePrompt", () => {
     imageUrlMap: new Map<string, string>(),
   };
 
-  test("should generate prompt for issue_comment event", () => {
+  test("should generate prompt for issue_comment event", async () => {
     const envVars: PreparedContext = {
       repository: "owner/repo",
       claudeCommentId: "12345",
@@ -157,7 +157,7 @@ describe("generatePrompt", () => {
       },
     };
 
-    const prompt = generatePrompt(envVars, mockGitHubData, false, mockTagMode);
+    const prompt = await generatePrompt(envVars, mockGitHubData, false, mockTagMode);
 
     expect(prompt).toContain("You are Claude, an AI assistant");
     expect(prompt).toContain("<event_type>GENERAL_COMMENT</event_type>");
@@ -172,7 +172,7 @@ describe("generatePrompt", () => {
     expect(prompt).not.toContain("filename\tstatus\tadditions\tdeletions\tsha"); // since it's not a PR
   });
 
-  test("should generate prompt for pull_request_review event", () => {
+  test("should generate prompt for pull_request_review event", async () => {
     const envVars: PreparedContext = {
       repository: "owner/repo",
       claudeCommentId: "12345",
@@ -185,7 +185,7 @@ describe("generatePrompt", () => {
       },
     };
 
-    const prompt = generatePrompt(envVars, mockGitHubData, false, mockTagMode);
+    const prompt = await generatePrompt(envVars, mockGitHubData, false, mockTagMode);
 
     expect(prompt).toContain("<event_type>PR_REVIEW</event_type>");
     expect(prompt).toContain("<is_pr>true</is_pr>");
@@ -196,7 +196,7 @@ describe("generatePrompt", () => {
     ); // from review comments
   });
 
-  test("should generate prompt for issue opened event", () => {
+  test("should generate prompt for issue opened event", async () => {
     const envVars: PreparedContext = {
       repository: "owner/repo",
       claudeCommentId: "12345",
@@ -211,7 +211,7 @@ describe("generatePrompt", () => {
       },
     };
 
-    const prompt = generatePrompt(envVars, mockGitHubData, false, mockTagMode);
+    const prompt = await generatePrompt(envVars, mockGitHubData, false, mockTagMode);
 
     expect(prompt).toContain("<event_type>ISSUE_CREATED</event_type>");
     expect(prompt).toContain(
@@ -223,7 +223,7 @@ describe("generatePrompt", () => {
     expect(prompt).toContain("The target-branch should be 'main'");
   });
 
-  test("should generate prompt for issue assigned event", () => {
+  test("should generate prompt for issue assigned event", async () => {
     const envVars: PreparedContext = {
       repository: "owner/repo",
       claudeCommentId: "12345",
@@ -239,7 +239,7 @@ describe("generatePrompt", () => {
       },
     };
 
-    const prompt = generatePrompt(envVars, mockGitHubData, false, mockTagMode);
+    const prompt = await generatePrompt(envVars, mockGitHubData, false, mockTagMode);
 
     expect(prompt).toContain("<event_type>ISSUE_ASSIGNED</event_type>");
     expect(prompt).toContain(
@@ -250,7 +250,7 @@ describe("generatePrompt", () => {
     );
   });
 
-  test("should generate prompt for issue labeled event", () => {
+  test("should generate prompt for issue labeled event", async () => {
     const envVars: PreparedContext = {
       repository: "owner/repo",
       claudeCommentId: "12345",
@@ -266,7 +266,7 @@ describe("generatePrompt", () => {
       },
     };
 
-    const prompt = generatePrompt(envVars, mockGitHubData, false, mockTagMode);
+    const prompt = await generatePrompt(envVars, mockGitHubData, false, mockTagMode);
 
     expect(prompt).toContain("<event_type>ISSUE_LABELED</event_type>");
     expect(prompt).toContain(
@@ -277,7 +277,7 @@ describe("generatePrompt", () => {
     );
   });
 
-  test("should include direct prompt when provided", () => {
+  test("should include direct prompt when provided", async () => {
     const envVars: PreparedContext = {
       repository: "owner/repo",
       claudeCommentId: "12345",
@@ -293,7 +293,7 @@ describe("generatePrompt", () => {
       },
     };
 
-    const prompt = generatePrompt(envVars, mockGitHubData, false, mockTagMode);
+    const prompt = await generatePrompt(envVars, mockGitHubData, false, mockTagMode);
 
     expect(prompt).toContain("<direct_prompt>");
     expect(prompt).toContain("Fix the bug in the login form");
@@ -303,7 +303,7 @@ describe("generatePrompt", () => {
     );
   });
 
-  test("should generate prompt for pull_request event", () => {
+  test("should generate prompt for pull_request event", async () => {
     const envVars: PreparedContext = {
       repository: "owner/repo",
       claudeCommentId: "12345",
@@ -316,7 +316,7 @@ describe("generatePrompt", () => {
       },
     };
 
-    const prompt = generatePrompt(envVars, mockGitHubData, false, mockTagMode);
+    const prompt = await generatePrompt(envVars, mockGitHubData, false, mockTagMode);
 
     expect(prompt).toContain("<event_type>PULL_REQUEST</event_type>");
     expect(prompt).toContain("<is_pr>true</is_pr>");
@@ -324,7 +324,7 @@ describe("generatePrompt", () => {
     expect(prompt).toContain("pull request opened");
   });
 
-  test("should include custom instructions when provided", () => {
+  test("should include custom instructions when provided", async () => {
     const envVars: PreparedContext = {
       repository: "owner/repo",
       claudeCommentId: "12345",
@@ -341,12 +341,12 @@ describe("generatePrompt", () => {
       },
     };
 
-    const prompt = generatePrompt(envVars, mockGitHubData, false, mockTagMode);
+    const prompt = await generatePrompt(envVars, mockGitHubData, false, mockTagMode);
 
     expect(prompt).toContain("CUSTOM INSTRUCTIONS:\nAlways use TypeScript");
   });
 
-  test("should use override_prompt when provided", () => {
+  test("should use override_prompt when provided", async () => {
     const envVars: PreparedContext = {
       repository: "owner/repo",
       claudeCommentId: "12345",
@@ -360,13 +360,13 @@ describe("generatePrompt", () => {
       },
     };
 
-    const prompt = generatePrompt(envVars, mockGitHubData, false, mockTagMode);
+    const prompt = await generatePrompt(envVars, mockGitHubData, false, mockTagMode);
 
     expect(prompt).toBe("Simple prompt for owner/repo PR #123");
     expect(prompt).not.toContain("You are Claude, an AI assistant");
   });
 
-  test("should substitute all variables in override_prompt", () => {
+  test("should substitute all variables in override_prompt", async () => {
     const envVars: PreparedContext = {
       repository: "test/repo",
       claudeCommentId: "12345",
@@ -395,7 +395,7 @@ describe("generatePrompt", () => {
       },
     };
 
-    const prompt = generatePrompt(envVars, mockGitHubData, false, mockTagMode);
+    const prompt = await generatePrompt(envVars, mockGitHubData, false, mockTagMode);
 
     expect(prompt).toContain("Repository: test/repo");
     expect(prompt).toContain("PR: 456");
@@ -412,7 +412,7 @@ describe("generatePrompt", () => {
     expect(prompt).toContain("Is PR: true");
   });
 
-  test("should handle override_prompt for issues", () => {
+  test("should handle override_prompt for issues", async () => {
     const envVars: PreparedContext = {
       repository: "owner/repo",
       claudeCommentId: "12345",
@@ -442,12 +442,12 @@ describe("generatePrompt", () => {
       },
     };
 
-    const prompt = generatePrompt(envVars, issueGitHubData, false, mockTagMode);
+    const prompt = await generatePrompt(envVars, issueGitHubData, false, mockTagMode);
 
     expect(prompt).toBe("Issue #789: Bug: Login form broken in owner/repo");
   });
 
-  test("should handle empty values in override_prompt substitution", () => {
+  test("should handle empty values in override_prompt substitution", async () => {
     const envVars: PreparedContext = {
       repository: "owner/repo",
       claudeCommentId: "12345",
@@ -462,12 +462,12 @@ describe("generatePrompt", () => {
       },
     };
 
-    const prompt = generatePrompt(envVars, mockGitHubData, false, mockTagMode);
+    const prompt = await generatePrompt(envVars, mockGitHubData, false, mockTagMode);
 
     expect(prompt).toBe("PR: 123, Issue: , Comment: ");
   });
 
-  test("should not substitute variables when override_prompt is not provided", () => {
+  test("should not substitute variables when override_prompt is not provided", async () => {
     const envVars: PreparedContext = {
       repository: "owner/repo",
       claudeCommentId: "12345",
@@ -482,13 +482,13 @@ describe("generatePrompt", () => {
       },
     };
 
-    const prompt = generatePrompt(envVars, mockGitHubData, false, mockTagMode);
+    const prompt = await generatePrompt(envVars, mockGitHubData, false, mockTagMode);
 
     expect(prompt).toContain("You are Claude, an AI assistant");
     expect(prompt).toContain("<event_type>ISSUE_CREATED</event_type>");
   });
 
-  test("should include trigger username when provided", () => {
+  test("should include trigger username when provided", async () => {
     const envVars: PreparedContext = {
       repository: "owner/repo",
       claudeCommentId: "12345",
@@ -505,7 +505,7 @@ describe("generatePrompt", () => {
       },
     };
 
-    const prompt = generatePrompt(envVars, mockGitHubData, false, mockTagMode);
+    const prompt = await generatePrompt(envVars, mockGitHubData, false, mockTagMode);
 
     expect(prompt).toContain("<trigger_username>johndoe</trigger_username>");
     // With commit signing disabled, co-author info appears in git commit instructions
@@ -514,7 +514,7 @@ describe("generatePrompt", () => {
     );
   });
 
-  test("should include PR-specific instructions only for PR events", () => {
+  test("should include PR-specific instructions only for PR events", async () => {
     const envVars: PreparedContext = {
       repository: "owner/repo",
       claudeCommentId: "12345",
@@ -527,7 +527,7 @@ describe("generatePrompt", () => {
       },
     };
 
-    const prompt = generatePrompt(envVars, mockGitHubData, false, mockTagMode);
+    const prompt = await generatePrompt(envVars, mockGitHubData, false, mockTagMode);
 
     // Should contain PR-specific instructions (git commands when not using signing)
     expect(prompt).toContain("git push");
@@ -543,7 +543,7 @@ describe("generatePrompt", () => {
     expect(prompt).not.toContain("Create a PR](https://github.com/");
   });
 
-  test("should include Issue-specific instructions only for Issue events", () => {
+  test("should include Issue-specific instructions only for Issue events", async () => {
     const envVars: PreparedContext = {
       repository: "owner/repo",
       claudeCommentId: "12345",
@@ -558,7 +558,7 @@ describe("generatePrompt", () => {
       },
     };
 
-    const prompt = generatePrompt(envVars, mockGitHubData, false, mockTagMode);
+    const prompt = await generatePrompt(envVars, mockGitHubData, false, mockTagMode);
 
     // Should contain Issue-specific instructions
     expect(prompt).toContain(
@@ -581,7 +581,7 @@ describe("generatePrompt", () => {
     );
   });
 
-  test("should use actual branch name for issue comments", () => {
+  test("should use actual branch name for issue comments", async () => {
     const envVars: PreparedContext = {
       repository: "owner/repo",
       claudeCommentId: "12345",
@@ -597,7 +597,7 @@ describe("generatePrompt", () => {
       },
     };
 
-    const prompt = generatePrompt(envVars, mockGitHubData, false, mockTagMode);
+    const prompt = await generatePrompt(envVars, mockGitHubData, false, mockTagMode);
 
     // Should contain the actual branch name with timestamp
     expect(prompt).toContain(
@@ -611,7 +611,7 @@ describe("generatePrompt", () => {
     );
   });
 
-  test("should handle closed PR with new branch", () => {
+  test("should handle closed PR with new branch", async () => {
     const envVars: PreparedContext = {
       repository: "owner/repo",
       claudeCommentId: "12345",
@@ -627,7 +627,7 @@ describe("generatePrompt", () => {
       },
     };
 
-    const prompt = generatePrompt(envVars, mockGitHubData, false, mockTagMode);
+    const prompt = await generatePrompt(envVars, mockGitHubData, false, mockTagMode);
 
     // Should contain branch-specific instructions like issues
     expect(prompt).toContain(
@@ -650,7 +650,7 @@ describe("generatePrompt", () => {
     );
   });
 
-  test("should handle open PR without new branch", () => {
+  test("should handle open PR without new branch", async () => {
     const envVars: PreparedContext = {
       repository: "owner/repo",
       claudeCommentId: "12345",
@@ -665,7 +665,7 @@ describe("generatePrompt", () => {
       },
     };
 
-    const prompt = generatePrompt(envVars, mockGitHubData, false, mockTagMode);
+    const prompt = await generatePrompt(envVars, mockGitHubData, false, mockTagMode);
 
     // Should contain open PR instructions (git commands when not using signing)
     expect(prompt).toContain("git push");
@@ -681,7 +681,7 @@ describe("generatePrompt", () => {
     );
   });
 
-  test("should handle PR review on closed PR with new branch", () => {
+  test("should handle PR review on closed PR with new branch", async () => {
     const envVars: PreparedContext = {
       repository: "owner/repo",
       claudeCommentId: "12345",
@@ -696,7 +696,7 @@ describe("generatePrompt", () => {
       },
     };
 
-    const prompt = generatePrompt(envVars, mockGitHubData, false, mockTagMode);
+    const prompt = await generatePrompt(envVars, mockGitHubData, false, mockTagMode);
 
     // Should contain new branch instructions
     expect(prompt).toContain(
@@ -708,7 +708,7 @@ describe("generatePrompt", () => {
     expect(prompt).toContain("Reference to the original PR");
   });
 
-  test("should handle PR review comment on closed PR with new branch", () => {
+  test("should handle PR review comment on closed PR with new branch", async () => {
     const envVars: PreparedContext = {
       repository: "owner/repo",
       claudeCommentId: "12345",
@@ -724,7 +724,7 @@ describe("generatePrompt", () => {
       },
     };
 
-    const prompt = generatePrompt(envVars, mockGitHubData, false, mockTagMode);
+    const prompt = await generatePrompt(envVars, mockGitHubData, false, mockTagMode);
 
     // Should contain new branch instructions
     expect(prompt).toContain(
@@ -737,7 +737,7 @@ describe("generatePrompt", () => {
     );
   });
 
-  test("should handle pull_request event on closed PR with new branch", () => {
+  test("should handle pull_request event on closed PR with new branch", async () => {
     const envVars: PreparedContext = {
       repository: "owner/repo",
       claudeCommentId: "12345",
@@ -752,7 +752,7 @@ describe("generatePrompt", () => {
       },
     };
 
-    const prompt = generatePrompt(envVars, mockGitHubData, false, mockTagMode);
+    const prompt = await generatePrompt(envVars, mockGitHubData, false, mockTagMode);
 
     // Should contain new branch instructions
     expect(prompt).toContain(
@@ -762,7 +762,7 @@ describe("generatePrompt", () => {
     expect(prompt).toContain("Reference to the original PR");
   });
 
-  test("should include git commands when useCommitSigning is false", () => {
+  test("should include git commands when useCommitSigning is false", async () => {
     const envVars: PreparedContext = {
       repository: "owner/repo",
       claudeCommentId: "12345",
@@ -776,7 +776,7 @@ describe("generatePrompt", () => {
       },
     };
 
-    const prompt = generatePrompt(envVars, mockGitHubData, false, mockTagMode);
+    const prompt = await generatePrompt(envVars, mockGitHubData, false, mockTagMode);
 
     // Should have git command instructions
     expect(prompt).toContain("Use git commands via the Bash tool");
@@ -791,7 +791,7 @@ describe("generatePrompt", () => {
     expect(prompt).not.toContain("mcp__github_file_ops__commit_files");
   });
 
-  test("should include commit signing tools when useCommitSigning is true", () => {
+  test("should include commit signing tools when useCommitSigning is true", async () => {
     const envVars: PreparedContext = {
       repository: "owner/repo",
       claudeCommentId: "12345",
@@ -805,7 +805,7 @@ describe("generatePrompt", () => {
       },
     };
 
-    const prompt = generatePrompt(envVars, mockGitHubData, true, mockTagMode);
+    const prompt = await generatePrompt(envVars, mockGitHubData, true, mockTagMode);
 
     // Should have commit signing tool instructions
     expect(prompt).toContain("mcp__github_file_ops__commit_files");
@@ -819,7 +819,7 @@ describe("generatePrompt", () => {
 });
 
 describe("getEventTypeAndContext", () => {
-  test("should return correct type and context for pull_request_review_comment", () => {
+  test("should return correct type and context for pull_request_review_comment", async () => {
     const envVars: PreparedContext = {
       repository: "owner/repo",
       claudeCommentId: "12345",
@@ -838,7 +838,7 @@ describe("getEventTypeAndContext", () => {
     expect(result.triggerContext).toBe("PR review comment with '@claude'");
   });
 
-  test("should return correct type and context for issue assigned", () => {
+  test("should return correct type and context for issue assigned", async () => {
     const envVars: PreparedContext = {
       repository: "owner/repo",
       claudeCommentId: "12345",
@@ -860,7 +860,7 @@ describe("getEventTypeAndContext", () => {
     expect(result.triggerContext).toBe("issue assigned to 'claude-bot'");
   });
 
-  test("should return correct type and context for issue labeled", () => {
+  test("should return correct type and context for issue labeled", async () => {
     const envVars: PreparedContext = {
       repository: "owner/repo",
       claudeCommentId: "12345",
@@ -882,7 +882,7 @@ describe("getEventTypeAndContext", () => {
     expect(result.triggerContext).toBe("issue labeled with 'claude-task'");
   });
 
-  test("should return correct type and context for issue assigned without assigneeTrigger", () => {
+  test("should return correct type and context for issue assigned without assigneeTrigger", async () => {
     const envVars: PreparedContext = {
       repository: "owner/repo",
       claudeCommentId: "12345",
@@ -907,7 +907,7 @@ describe("getEventTypeAndContext", () => {
 });
 
 describe("buildAllowedToolsString", () => {
-  test("should return correct tools for regular events (default no signing)", () => {
+  test("should return correct tools for regular events (default no signing)", async () => {
     const result = buildAllowedToolsString();
 
     // The base tools should be in the result
@@ -929,7 +929,7 @@ describe("buildAllowedToolsString", () => {
     expect(result).not.toContain("mcp__github_file_ops__delete_files");
   });
 
-  test("should return correct tools with default parameters", () => {
+  test("should return correct tools with default parameters", async () => {
     const result = buildAllowedToolsString([], false, false);
 
     // The base tools should be in the result
@@ -950,7 +950,7 @@ describe("buildAllowedToolsString", () => {
     expect(result).not.toContain("mcp__github_file_ops__delete_files");
   });
 
-  test("should append custom tools when provided", () => {
+  test("should append custom tools when provided", async () => {
     const customTools = ["Tool1", "Tool2", "Tool3"];
     const result = buildAllowedToolsString(customTools);
 
@@ -971,7 +971,7 @@ describe("buildAllowedToolsString", () => {
     expect(basePlusCustom).toContain("Tool3");
   });
 
-  test("should include GitHub Actions tools when includeActionsTools is true", () => {
+  test("should include GitHub Actions tools when includeActionsTools is true", async () => {
     const result = buildAllowedToolsString([], true);
 
     // Base tools should be present
@@ -984,7 +984,7 @@ describe("buildAllowedToolsString", () => {
     expect(result).toContain("mcp__github_ci__download_job_log");
   });
 
-  test("should include both custom and Actions tools when both provided", () => {
+  test("should include both custom and Actions tools when both provided", async () => {
     const customTools = ["Tool1", "Tool2"];
     const result = buildAllowedToolsString(customTools, true);
 
@@ -1001,7 +1001,7 @@ describe("buildAllowedToolsString", () => {
     expect(result).toContain("mcp__github_ci__download_job_log");
   });
 
-  test("should include commit signing tools when useCommitSigning is true", () => {
+  test("should include commit signing tools when useCommitSigning is true", async () => {
     const result = buildAllowedToolsString([], false, true);
 
     // Base tools should be present
@@ -1022,7 +1022,7 @@ describe("buildAllowedToolsString", () => {
     expect(result).not.toContain("Bash(");
   });
 
-  test("should include specific Bash git commands when useCommitSigning is false", () => {
+  test("should include specific Bash git commands when useCommitSigning is false", async () => {
     const result = buildAllowedToolsString([], false, false);
 
     // Base tools should be present
@@ -1050,7 +1050,7 @@ describe("buildAllowedToolsString", () => {
     expect(result).not.toContain("mcp__github_file_ops__delete_files");
   });
 
-  test("should handle all combinations of options", () => {
+  test("should handle all combinations of options", async () => {
     const customTools = ["CustomTool1", "CustomTool2"];
     const result = buildAllowedToolsString(customTools, true, false);
 
@@ -1074,7 +1074,7 @@ describe("buildAllowedToolsString", () => {
 });
 
 describe("buildDisallowedToolsString", () => {
-  test("should return base disallowed tools when no custom tools provided", () => {
+  test("should return base disallowed tools when no custom tools provided", async () => {
     const result = buildDisallowedToolsString();
 
     // The base disallowed tools should be in the result
@@ -1082,7 +1082,7 @@ describe("buildDisallowedToolsString", () => {
     expect(result).toContain("WebFetch");
   });
 
-  test("should append custom disallowed tools when provided", () => {
+  test("should append custom disallowed tools when provided", async () => {
     const customDisallowedTools = ["BadTool1", "BadTool2"];
     const result = buildDisallowedToolsString(customDisallowedTools);
 
@@ -1100,7 +1100,7 @@ describe("buildDisallowedToolsString", () => {
     expect(parts).toContain("BadTool2");
   });
 
-  test("should remove hardcoded disallowed tools if they are in allowed tools", () => {
+  test("should remove hardcoded disallowed tools if they are in allowed tools", async () => {
     const customDisallowedTools = ["BadTool1", "BadTool2"];
     const allowedTools = ["WebSearch", "SomeOtherTool"];
     const result = buildDisallowedToolsString(
@@ -1119,7 +1119,7 @@ describe("buildDisallowedToolsString", () => {
     expect(result).toContain("BadTool2");
   });
 
-  test("should remove all hardcoded disallowed tools if they are all in allowed tools", () => {
+  test("should remove all hardcoded disallowed tools if they are all in allowed tools", async () => {
     const allowedTools = ["WebSearch", "WebFetch", "SomeOtherTool"];
     const result = buildDisallowedToolsString(undefined, allowedTools);
 
@@ -1131,7 +1131,7 @@ describe("buildDisallowedToolsString", () => {
     expect(result).toBe("");
   });
 
-  test("should handle custom disallowed tools when all hardcoded tools are overridden", () => {
+  test("should handle custom disallowed tools when all hardcoded tools are overridden", async () => {
     const customDisallowedTools = ["BadTool1", "BadTool2"];
     const allowedTools = ["WebSearch", "WebFetch"];
     const result = buildDisallowedToolsString(

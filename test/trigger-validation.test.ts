@@ -29,6 +29,7 @@ describe("checkContainsTrigger", () => {
         eventAction: "opened",
         inputs: {
           mode: "tag",
+          prompt: "",
           triggerPhrase: "/claude",
           assigneeTrigger: "",
           labelTrigger: "",
@@ -62,6 +63,7 @@ describe("checkContainsTrigger", () => {
         } as IssuesEvent,
         inputs: {
           mode: "tag",
+          prompt: "",
           triggerPhrase: "/claude",
           assigneeTrigger: "",
           labelTrigger: "",
@@ -279,6 +281,7 @@ describe("checkContainsTrigger", () => {
         } as PullRequestEvent,
         inputs: {
           mode: "tag",
+          prompt: "",
           triggerPhrase: "@claude",
           assigneeTrigger: "",
           labelTrigger: "",
@@ -313,6 +316,7 @@ describe("checkContainsTrigger", () => {
         } as PullRequestEvent,
         inputs: {
           mode: "tag",
+          prompt: "",
           triggerPhrase: "@claude",
           assigneeTrigger: "",
           labelTrigger: "",
@@ -347,6 +351,7 @@ describe("checkContainsTrigger", () => {
         } as PullRequestEvent,
         inputs: {
           mode: "tag",
+          prompt: "",
           triggerPhrase: "@claude",
           assigneeTrigger: "",
           labelTrigger: "",

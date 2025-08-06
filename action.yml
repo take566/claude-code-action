@@ -1,5 +1,5 @@
-name: "Claude Code Action Official"
-description: "General-purpose Claude agent for GitHub PRs and issues. Can answer questions and implement code changes."
+name: "Claude Code Action v1.0"
+description: "Flexible GitHub automation platform with Claude. Auto-detects mode based on event type: PR reviews, @claude mentions, or custom automation."
 branding:
   icon: "at-sign"
   color: "orange"
@@ -24,11 +24,11 @@ inputs:
     required: false
     default: "claude/"
 
-  # Mode configuration
+  # Mode configuration (v1.0: auto-detected, kept for backward compatibility)
   mode:
-    description: "Execution mode for the action. Valid modes: 'tag' (default - triggered by mentions/assignments), 'agent' (for automation with no trigger checking), 'experimental-review' (experimental mode for code reviews with inline comments and suggestions)"
+    description: "DEPRECATED in v1.0: Mode is now auto-detected. Review mode for PRs, Tag mode for @claude mentions, Agent mode for automation."
     required: false
-    default: "tag"
+    default: ""
 
   # Claude Code configuration
   model:
@@ -52,12 +52,16 @@ inputs:
     description: "Additional custom instructions to include in the prompt for Claude"
     required: false
     default: ""
-  direct_prompt:
-    description: "Direct instruction for Claude (bypasses normal trigger detection)"
+  prompt:
+    description: "Instructions for Claude. Can be a direct prompt, slash command (e.g. /review), or custom template. Replaces override_prompt and direct_prompt from v0.x"
     required: false
     default: ""
   override_prompt:
-    description: "Complete replacement of Claude's prompt with custom template (supports variable substitution)"
+    description: "DEPRECATED: Use 'prompt' instead. Kept for backward compatibility."
+    required: false
+    default: ""
+  direct_prompt:
+    description: "DEPRECATED: Use 'prompt' instead. Kept for backward compatibility."
     required: false
     default: ""
   mcp_config:
@@ -144,6 +148,7 @@ runs:
         bun run ${GITHUB_ACTION_PATH}/src/entrypoints/prepare.ts
       env:
         MODE: ${{ inputs.mode }}
+        PROMPT: ${{ inputs.prompt }}
         TRIGGER_PHRASE: ${{ inputs.trigger_phrase }}
         ASSIGNEE_TRIGGER: ${{ inputs.assignee_trigger }}
         LABEL_TRIGGER: ${{ inputs.label_trigger }}

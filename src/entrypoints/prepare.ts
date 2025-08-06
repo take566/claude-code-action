@@ -10,29 +10,27 @@ import { setupGitHubToken } from "../github/token";
 import { checkWritePermissions } from "../github/validation/permissions";
 import { createOctokit } from "../github/api/client";
 import { parseGitHubContext, isEntityContext } from "../github/context";
-import { getMode, isValidMode, DEFAULT_MODE } from "../modes/registry";
-import type { ModeName } from "../modes/types";
+import { getMode } from "../modes/registry";
 import { prepare } from "../prepare";
 
 async function run() {
   try {
-    // Step 1: Get mode first to determine authentication method
-    const modeInput = process.env.MODE || DEFAULT_MODE;
+    // Parse GitHub context first to enable mode detection
+    const context = parseGitHubContext();
 
-    // Validate mode input
-    if (!isValidMode(modeInput)) {
-      throw new Error(`Invalid mode: ${modeInput}`);
-    }
-    const validatedMode: ModeName = modeInput;
+    // Auto-detect mode based on context, with optional override
+    const modeOverride = process.env.MODE;
+    const mode = getMode(context, modeOverride);
+    const modeName = mode.name;
 
-    // Step 2: Setup GitHub token based on mode
+    // Setup GitHub token based on mode
     let githubToken: string;
-    if (validatedMode === "experimental-review") {
-      // For experimental-review mode, use the default GitHub Action token
+    if (modeName === "review" || modeName === "experimental-review") {
+      // For review mode, use the default GitHub Action token
       githubToken = process.env.DEFAULT_WORKFLOW_TOKEN || "";
       if (!githubToken) {
         throw new Error(
-          "DEFAULT_WORKFLOW_TOKEN not found for experimental-review mode",
+          "DEFAULT_WORKFLOW_TOKEN not found for review mode",
         );
       }
       console.log("Using default GitHub Action token for review mode");
@@ -43,8 +41,6 @@ async function run() {
     }
     const octokit = createOctokit(githubToken);
 
-    // Step 2: Parse GitHub context (once for all operations)
-    const context = parseGitHubContext();
 
     // Step 3: Check write permissions (only for entity contexts)
     if (isEntityContext(context)) {
@@ -59,8 +55,7 @@ async function run() {
       }
     }
 
-    // Step 4: Get mode and check trigger conditions
-    const mode = getMode(validatedMode, context);
+    // Check trigger conditions
     const containsTrigger = mode.shouldTrigger(context);
 
     // Set output for action.yml to check

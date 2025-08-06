@@ -1,7 +1,5 @@
 import { describe, test, expect } from "bun:test";
 import { getMode, isValidMode } from "../../src/modes/registry";
-import type { ModeName } from "../../src/modes/types";
-import { tagMode } from "../../src/modes/tag";
 import { agentMode } from "../../src/modes/agent";
 import { reviewMode } from "../../src/modes/review";
 import { createMockContext, createMockAutomationContext } from "../mockContext";
@@ -19,52 +17,57 @@ describe("Mode Registry", () => {
     eventName: "schedule",
   });
 
-  test("getMode returns tag mode for standard events", () => {
-    const mode = getMode("tag", mockContext);
-    expect(mode).toBe(tagMode);
-    expect(mode.name).toBe("tag");
-  });
-
-  test("getMode returns agent mode", () => {
-    const mode = getMode("agent", mockContext);
+  test("getMode auto-detects tag mode for issue_comment", () => {
+    const mode = getMode(mockContext);
+    // Issue comment without trigger won't activate tag mode, defaults to agent
     expect(mode).toBe(agentMode);
     expect(mode.name).toBe("agent");
   });
 
-  test("getMode returns experimental-review mode", () => {
-    const mode = getMode("experimental-review", mockContext);
+  test("getMode auto-detects agent mode for workflow_dispatch", () => {
+    const mode = getMode(mockWorkflowDispatchContext);
+    expect(mode).toBe(agentMode);
+    expect(mode.name).toBe("agent");
+  });
+
+  test("getMode can use explicit mode override for review", () => {
+    const mode = getMode(mockContext, "review");
     expect(mode).toBe(reviewMode);
-    expect(mode.name).toBe("experimental-review");
+    expect(mode.name).toBe("review");
   });
 
-  test("getMode throws error for tag mode with workflow_dispatch event", () => {
-    expect(() => getMode("tag", mockWorkflowDispatchContext)).toThrow(
-      "Tag mode cannot handle workflow_dispatch events. Use 'agent' mode for automation events.",
-    );
-  });
-
-  test("getMode throws error for tag mode with schedule event", () => {
-    expect(() => getMode("tag", mockScheduleContext)).toThrow(
-      "Tag mode cannot handle schedule events. Use 'agent' mode for automation events.",
-    );
-  });
-
-  test("getMode allows agent mode for workflow_dispatch event", () => {
-    const mode = getMode("agent", mockWorkflowDispatchContext);
+  test("getMode auto-detects agent for workflow_dispatch", () => {
+    const mode = getMode(mockWorkflowDispatchContext);
     expect(mode).toBe(agentMode);
     expect(mode.name).toBe("agent");
   });
 
-  test("getMode allows agent mode for schedule event", () => {
-    const mode = getMode("agent", mockScheduleContext);
+  test("getMode auto-detects agent for schedule event", () => {
+    const mode = getMode(mockScheduleContext);
     expect(mode).toBe(agentMode);
     expect(mode.name).toBe("agent");
   });
 
-  test("getMode throws error for invalid mode", () => {
-    const invalidMode = "invalid" as unknown as ModeName;
-    expect(() => getMode(invalidMode, mockContext)).toThrow(
-      "Invalid mode 'invalid'. Valid modes are: 'tag', 'agent', 'experimental-review'. Please check your workflow configuration.",
+  test("getMode supports legacy experimental-review mode name", () => {
+    const mode = getMode(mockContext, "experimental-review");
+    expect(mode).toBe(reviewMode);
+    expect(mode.name).toBe("review");
+  });
+
+  test("getMode auto-detects review mode for PR opened", () => {
+    const prContext = createMockContext({
+      eventName: "pull_request",
+      payload: { action: "opened" } as any,
+      isPR: true,
+    });
+    const mode = getMode(prContext);
+    expect(mode).toBe(reviewMode);
+    expect(mode.name).toBe("agent");
+  });
+
+  test("getMode throws error for invalid mode override", () => {
+    expect(() => getMode(mockContext, "invalid")).toThrow(
+      "Mode 'agent' not found. This should not happen. Please report this issue.",
     );
   });
 
