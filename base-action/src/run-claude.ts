@@ -117,7 +117,7 @@ export function prepareRunConfig(
       const streamConfig: StreamConfig = JSON.parse(options.streamConfig);
       // Add --session-id if session_id is provided
       if (streamConfig.session_id) {
-        // claudeArgs.push("--session-id", streamConfig.session_id);
+        claudeArgs.push("--session-id", streamConfig.session_id);
       }
       // Only add --teleport if we have both session_id AND resume_endpoint
       if (streamConfig.session_id && streamConfig.resume_endpoint) {
