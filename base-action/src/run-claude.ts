@@ -22,7 +22,6 @@ export type ClaudeOptions = {
   claudeEnv?: string;
   fallbackModel?: string;
   timeoutMinutes?: string;
-  resumeEndpoint?: string;
   streamConfig?: string;
 };
 
@@ -112,16 +111,13 @@ export function prepareRunConfig(
       );
     }
   }
-  if (options.resumeEndpoint) {
-    claudeArgs.push("--teleport", options.resumeEndpoint);
-  }
   // Parse stream config for session_id and resume_endpoint
   if (options.streamConfig) {
     try {
       const streamConfig: StreamConfig = JSON.parse(options.streamConfig);
       // Add --session-id if session_id is provided
       if (streamConfig.session_id) {
-        claudeArgs.push("--session-id", streamConfig.session_id);
+        // claudeArgs.push("--session-id", streamConfig.session_id);
       }
       // Only add --teleport if we have both session_id AND resume_endpoint
       if (streamConfig.session_id && streamConfig.resume_endpoint) {
