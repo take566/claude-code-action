@@ -176,7 +176,7 @@ runs:
         echo "Base-action dependencies installed"
         cd -
         # Install Claude Code globally
-        bun install -g @anthropic-ai/claude-code
+        bun install -g @anthropic-ai/claude-code@next
 
     - name: Setup Network Restrictions
       if: steps.prepare.outputs.contains_trigger == 'true' && inputs.experimental_allowed_domains != ''
