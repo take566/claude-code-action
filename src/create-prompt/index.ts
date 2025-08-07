@@ -466,10 +466,8 @@ export function generatePrompt(
   mode: Mode,
 ): string {
   // v1.0: Simply pass through the prompt to Claude Code
-  // Claude Code handles slash commands natively
   const prompt = context.prompt || "";
 
-  // If we have a prompt, just return it (Claude Code will handle slash commands)
   if (prompt) {
     return prompt;
   }
