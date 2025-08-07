@@ -1,24 +1,20 @@
 import type { GitHubContext } from "../github/context";
 import {
   isEntityContext,
-  isAutomationContext,
-  isPullRequestEvent,
   isIssueCommentEvent,
   isPullRequestReviewCommentEvent,
 } from "../github/context";
 import { checkContainsTrigger } from "../github/validation/trigger";
 
-export type AutoDetectedMode = "review" | "tag" | "agent";
+export type AutoDetectedMode = "tag" | "agent";
 
 export function detectMode(context: GitHubContext): AutoDetectedMode {
-  if (isPullRequestEvent(context)) {
-    const allowedActions = ["opened", "synchronize", "reopened"];
-    const action = context.payload.action;
-    if (allowedActions.includes(action)) {
-      return "review";
-    }
+  // If prompt is provided, always use agent mode
+  if (context.inputs?.prompt) {
+    return "agent";
   }
 
+  // Check for @claude mentions (tag mode)
   if (isEntityContext(context)) {
     if (
       isIssueCommentEvent(context) ||
@@ -36,21 +32,16 @@ export function detectMode(context: GitHubContext): AutoDetectedMode {
     }
   }
 
-  if (isAutomationContext(context)) {
-    return "agent";
-  }
-
+  // Default to agent mode for everything else
   return "agent";
 }
 
 export function getModeDescription(mode: AutoDetectedMode): string {
   switch (mode) {
-    case "review":
-      return "Automated code review mode for pull requests";
     case "tag":
       return "Interactive mode triggered by @claude mentions";
     case "agent":
-      return "Automation mode for scheduled tasks and workflows";
+      return "General automation mode for all events";
     default:
       return "Unknown mode";
   }
@@ -65,12 +56,10 @@ export function getDefaultPromptForMode(
   context: GitHubContext,
 ): string | undefined {
   switch (mode) {
-    case "review":
-      return "/review";
     case "tag":
       return undefined;
     case "agent":
-      return context.inputs?.directPrompt || context.inputs?.overridePrompt;
+      return context.inputs?.prompt;
     default:
       return undefined;
   }

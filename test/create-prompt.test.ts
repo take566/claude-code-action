@@ -302,34 +302,7 @@ describe("generatePrompt", () => {
     );
   });
 
-  test("should include direct prompt when provided", async () => {
-    const envVars: PreparedContext = {
-      repository: "owner/repo",
-      claudeCommentId: "12345",
-      triggerPhrase: "@claude",
-      directPrompt: "Fix the bug in the login form",
-      eventData: {
-        eventName: "issues",
-        eventAction: "opened",
-        isPR: false,
-        issueNumber: "789",
-        baseBranch: "main",
-        claudeBranch: "claude/issue-789-20240101-1200",
-      },
-    };
-
-    const prompt = generateDefaultPrompt(envVars, mockGitHubData, false);
-
-    expect(prompt).toContain("<direct_prompt>");
-    expect(prompt).toContain(
-      "IMPORTANT: The following are direct instructions",
-    );
-    expect(prompt).toContain("Fix the bug in the login form");
-    expect(prompt).toContain("</direct_prompt>");
-    expect(prompt).toContain(
-      "CRITICAL: Direct user instructions were provided in the <direct_prompt> tag above. These are HIGH PRIORITY instructions that OVERRIDE all other context and MUST be followed exactly as written.",
-    );
-  });
+  // Removed test - direct_prompt field no longer supported in v1.0
 
   test("should generate prompt for pull_request event", async () => {
     const envVars: PreparedContext = {
@@ -389,7 +362,7 @@ describe("generatePrompt", () => {
       repository: "owner/repo",
       claudeCommentId: "12345",
       triggerPhrase: "@claude",
-      overridePrompt: "Simple prompt for $REPOSITORY PR #$PR_NUMBER",
+      prompt: "Simple prompt for reviewing PR",
       eventData: {
         eventName: "pull_request",
         eventAction: "opened",
@@ -405,17 +378,18 @@ describe("generatePrompt", () => {
       mockTagMode,
     );
 
-    expect(prompt).toBe("Simple prompt for owner/repo PR #123");
+    // v1.0: Prompt is passed through as-is
+    expect(prompt).toBe("Simple prompt for reviewing PR");
     expect(prompt).not.toContain("You are Claude, an AI assistant");
   });
 
-  test("should substitute all variables in override_prompt", async () => {
+  test("should pass through prompt without variable substitution", async () => {
     const envVars: PreparedContext = {
       repository: "test/repo",
       claudeCommentId: "12345",
       triggerPhrase: "@claude",
       triggerUsername: "john-doe",
-      overridePrompt: `Repository: $REPOSITORY
+      prompt: `Repository: $REPOSITORY
       PR: $PR_NUMBER
       Title: $PR_TITLE
       Body: $PR_BODY
@@ -445,19 +419,15 @@ describe("generatePrompt", () => {
       mockTagMode,
     );
 
-    expect(prompt).toContain("Repository: test/repo");
-    expect(prompt).toContain("PR: 456");
-    expect(prompt).toContain("Title: Test PR");
-    expect(prompt).toContain("Body: This is a test PR");
-    expect(prompt).toContain("Comments: ");
-    expect(prompt).toContain("Review Comments: ");
-    expect(prompt).toContain("Changed Files: ");
-    expect(prompt).toContain("Trigger Comment: Please review this code");
-    expect(prompt).toContain("Username: john-doe");
-    expect(prompt).toContain("Branch: feature-branch");
-    expect(prompt).toContain("Base: main");
-    expect(prompt).toContain("Event: pull_request_review_comment");
-    expect(prompt).toContain("Is PR: true");
+    // v1.0: Variables are NOT substituted - prompt is passed as-is to Claude Code
+    expect(prompt).toContain("Repository: $REPOSITORY");
+    expect(prompt).toContain("PR: $PR_NUMBER");
+    expect(prompt).toContain("Title: $PR_TITLE");
+    expect(prompt).toContain("Body: $PR_BODY");
+    expect(prompt).toContain("Branch: $BRANCH_NAME");
+    expect(prompt).toContain("Base: $BASE_BRANCH");
+    expect(prompt).toContain("Username: $TRIGGER_USERNAME");
+    expect(prompt).toContain("Comment: $TRIGGER_COMMENT");
   });
 
   test("should handle override_prompt for issues", async () => {
@@ -465,7 +435,7 @@ describe("generatePrompt", () => {
       repository: "owner/repo",
       claudeCommentId: "12345",
       triggerPhrase: "@claude",
-      overridePrompt: "Issue #$ISSUE_NUMBER: $ISSUE_TITLE in $REPOSITORY",
+      prompt: "Review issue and provide feedback",
       eventData: {
         eventName: "issues",
         eventAction: "opened",
@@ -497,16 +467,16 @@ describe("generatePrompt", () => {
       mockTagMode,
     );
 
-    expect(prompt).toBe("Issue #789: Bug: Login form broken in owner/repo");
+    // v1.0: Prompt is passed through as-is
+    expect(prompt).toBe("Review issue and provide feedback");
   });
 
-  test("should handle empty values in override_prompt substitution", async () => {
+  test("should handle prompt without substitution", async () => {
     const envVars: PreparedContext = {
       repository: "owner/repo",
       claudeCommentId: "12345",
       triggerPhrase: "@claude",
-      overridePrompt:
-        "PR: $PR_NUMBER, Issue: $ISSUE_NUMBER, Comment: $TRIGGER_COMMENT",
+      prompt: "PR: $PR_NUMBER, Issue: $ISSUE_NUMBER, Comment: $TRIGGER_COMMENT",
       eventData: {
         eventName: "pull_request",
         eventAction: "opened",
@@ -522,7 +492,10 @@ describe("generatePrompt", () => {
       mockTagMode,
     );
 
-    expect(prompt).toBe("PR: 123, Issue: , Comment: ");
+    // v1.0: No substitution - passed as-is
+    expect(prompt).toBe(
+      "PR: $PR_NUMBER, Issue: $ISSUE_NUMBER, Comment: $TRIGGER_COMMENT",
+    );
   });
 
   test("should not substitute variables when override_prompt is not provided", async () => {
@@ -1005,7 +978,7 @@ describe("getEventTypeAndContext", () => {
       repository: "owner/repo",
       claudeCommentId: "12345",
       triggerPhrase: "@claude",
-      directPrompt: "Please assess this issue",
+      prompt: "Please assess this issue",
       eventData: {
         eventName: "issues",
         eventAction: "assigned",
@@ -1013,7 +986,7 @@ describe("getEventTypeAndContext", () => {
         issueNumber: "999",
         baseBranch: "main",
         claudeBranch: "claude/issue-999-20240101-1200",
-        // No assigneeTrigger when using directPrompt
+        // No assigneeTrigger when using prompt
       },
     };
 

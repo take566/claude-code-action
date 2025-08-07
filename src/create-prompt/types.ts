@@ -6,9 +6,7 @@ export type CommonFields = {
   customInstructions?: string;
   allowedTools?: string;
   disallowedTools?: string;
-  prompt?: string; // v1.0: Unified prompt field
-  directPrompt?: string; // Deprecated
-  overridePrompt?: string; // Deprecated
+  prompt?: string;
 };
 
 type PullRequestReviewCommentEvent = {

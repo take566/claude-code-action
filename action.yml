@@ -24,18 +24,9 @@ inputs:
     required: false
     default: "claude/"
 
-  # Mode configuration (v1.0: auto-detected, kept for backward compatibility)
-  mode:
-    description: "DEPRECATED in v1.0: Mode is now auto-detected. Review mode for PRs, Tag mode for @claude mentions, Agent mode for automation."
-    required: false
-    default: ""
-
   # Claude Code configuration
   model:
     description: "Model to use (provider-specific format required for Bedrock/Vertex)"
-    required: false
-  anthropic_model:
-    description: "DEPRECATED: Use 'model' instead. Model to use (provider-specific format required for Bedrock/Vertex)"
     required: false
   fallback_model:
     description: "Enable automatic fallback to specified model when primary model is unavailable"
@@ -53,15 +44,7 @@ inputs:
     required: false
     default: ""
   prompt:
-    description: "Instructions for Claude. Can be a direct prompt, slash command (e.g. /review), or custom template. Replaces override_prompt and direct_prompt from v0.x"
-    required: false
-    default: ""
-  override_prompt:
-    description: "DEPRECATED: Use 'prompt' instead. Kept for backward compatibility."
-    required: false
-    default: ""
-  direct_prompt:
-    description: "DEPRECATED: Use 'prompt' instead. Kept for backward compatibility."
+    description: "Instructions for Claude. Can be a direct prompt, slash command (e.g. /review), or custom template."
     required: false
     default: ""
   mcp_config:

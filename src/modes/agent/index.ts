@@ -48,13 +48,10 @@ export const agentMode: Mode = {
     await mkdir(`${process.env.RUNNER_TEMP}/claude-prompts`, {
       recursive: true,
     });
-    // Write the prompt file - the base action requires a prompt_file parameter,
-    // so we must create this file even though agent mode typically uses
-    // override_prompt or direct_prompt. If neither is provided, we write
-    // a minimal prompt with just the repository information.
+    // Write the prompt file - the base action requires a prompt_file parameter.
+    // Use the unified prompt field from v1.0.
     const promptContent =
-      context.inputs.overridePrompt ||
-      context.inputs.directPrompt ||
+      context.inputs.prompt ||
       `Repository: ${context.repository.owner}/${context.repository.repo}`;
     await writeFile(
       `${process.env.RUNNER_TEMP}/claude-prompts/claude-prompt.txt`,
@@ -117,13 +114,9 @@ export const agentMode: Mode = {
   },
 
   generatePrompt(context: PreparedContext): string {
-    // Agent mode uses override or direct prompt, no GitHub data needed
-    if (context.overridePrompt) {
-      return context.overridePrompt;
-    }
-
-    if (context.directPrompt) {
-      return context.directPrompt;
+    // Agent mode uses prompt field
+    if (context.prompt) {
+      return context.prompt;
     }
 
     // Minimal fallback - repository is a string in PreparedContext

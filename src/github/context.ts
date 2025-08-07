@@ -34,7 +34,6 @@ export type ScheduleEvent = {
     };
   };
 };
-import type { ModeName } from "../modes/types";
 
 // Event name constants for better maintainability
 const ENTITY_EVENT_NAMES = [
@@ -62,16 +61,13 @@ type BaseContext = {
   };
   actor: string;
   inputs: {
-    mode?: ModeName; // Optional for v1.0 backward compatibility
-    prompt: string; // New unified prompt field
+    prompt: string;
     triggerPhrase: string;
     assigneeTrigger: string;
     labelTrigger: string;
     allowedTools: string[];
     disallowedTools: string[];
     customInstructions: string;
-    directPrompt: string; // Deprecated, kept for compatibility
-    overridePrompt: string; // Deprecated, kept for compatibility
     baseBranch?: string;
     branchPrefix: string;
     useStickyComment: boolean;
@@ -105,11 +101,6 @@ export type GitHubContext = ParsedGitHubContext | AutomationContext;
 export function parseGitHubContext(): GitHubContext {
   const context = github.context;
 
-  // Mode is optional in v1.0 (auto-detected)
-  const modeInput = process.env.MODE
-    ? (process.env.MODE as ModeName)
-    : undefined;
-
   const commonFields = {
     runId: process.env.GITHUB_RUN_ID!,
     eventAction: context.payload.action,
@@ -120,21 +111,13 @@ export function parseGitHubContext(): GitHubContext {
     },
     actor: context.actor,
     inputs: {
-      mode: modeInput,
-      // v1.0: Unified prompt field with fallback to legacy fields
-      prompt:
-        process.env.PROMPT ||
-        process.env.OVERRIDE_PROMPT ||
-        process.env.DIRECT_PROMPT ||
-        "",
+      prompt: process.env.PROMPT || "",
       triggerPhrase: process.env.TRIGGER_PHRASE ?? "@claude",
       assigneeTrigger: process.env.ASSIGNEE_TRIGGER ?? "",
       labelTrigger: process.env.LABEL_TRIGGER ?? "",
       allowedTools: parseMultilineInput(process.env.ALLOWED_TOOLS ?? ""),
       disallowedTools: parseMultilineInput(process.env.DISALLOWED_TOOLS ?? ""),
       customInstructions: process.env.CUSTOM_INSTRUCTIONS ?? "",
-      directPrompt: process.env.DIRECT_PROMPT ?? "", // Deprecated
-      overridePrompt: process.env.OVERRIDE_PROMPT ?? "", // Deprecated
       baseBranch: process.env.BASE_BRANCH,
       branchPrefix: process.env.BRANCH_PREFIX ?? "claude/",
       useStickyComment: process.env.USE_STICKY_COMMENT === "true",

@@ -11,7 +11,6 @@ import type {
 } from "@octokit/webhooks-types";
 
 const defaultInputs = {
-  mode: "tag" as const,
   prompt: "",
   triggerPhrase: "/claude",
   assigneeTrigger: "",
@@ -20,8 +19,6 @@ const defaultInputs = {
   allowedTools: [] as string[],
   disallowedTools: [] as string[],
   customInstructions: "",
-  directPrompt: "",
-  overridePrompt: "",
   useBedrock: false,
   useVertex: false,
   timeoutMinutes: 30,

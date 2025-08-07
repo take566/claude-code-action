@@ -24,7 +24,6 @@ describe("prepareMcpConfig", () => {
     entityNumber: 123,
     isPR: false,
     inputs: {
-      mode: "tag",
       prompt: "",
       triggerPhrase: "@claude",
       assigneeTrigger: "",
@@ -32,8 +31,6 @@ describe("prepareMcpConfig", () => {
       allowedTools: [],
       disallowedTools: [],
       customInstructions: "",
-      directPrompt: "",
-      overridePrompt: "",
       branchPrefix: "",
       useStickyComment: false,
       additionalPermissions: new Map(),

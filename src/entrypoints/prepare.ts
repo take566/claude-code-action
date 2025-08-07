@@ -18,25 +18,11 @@ async function run() {
     // Parse GitHub context first to enable mode detection
     const context = parseGitHubContext();
 
-    // Auto-detect mode based on context, with optional override
-    const modeOverride = process.env.MODE;
-    const mode = getMode(context, modeOverride);
-    const modeName = mode.name;
+    // Auto-detect mode based on context
+    const mode = getMode(context);
 
-    // Setup GitHub token based on mode
-    let githubToken: string;
-    if (modeName === "review" || modeName === "experimental-review") {
-      // For review mode, use the default GitHub Action token
-      githubToken = process.env.DEFAULT_WORKFLOW_TOKEN || "";
-      if (!githubToken) {
-        throw new Error("DEFAULT_WORKFLOW_TOKEN not found for review mode");
-      }
-      console.log("Using default GitHub Action token for review mode");
-      core.setOutput("GITHUB_TOKEN", githubToken);
-    } else {
-      // For other modes, use the existing token exchange
-      githubToken = await setupGitHubToken();
-    }
+    // Setup GitHub token
+    const githubToken = await setupGitHubToken();
     const octokit = createOctokit(githubToken);
 
     // Step 3: Check write permissions (only for entity contexts)
