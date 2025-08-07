@@ -157,7 +157,6 @@ export function prepareContext(
       disallowedTools: disallowedTools.join(","),
     }),
     ...(prompt && { prompt }),
-    ...(prompt && { prompt }),
     ...(claudeBranch && { claudeBranch }),
   };
 
@@ -460,12 +459,12 @@ function getCommitInstructions(
   }
 }
 
-export async function generatePrompt(
+export function generatePrompt(
   context: PreparedContext,
   githubData: FetchDataResult,
   useCommitSigning: boolean,
   mode: Mode,
-): Promise<string> {
+): string {
   // v1.0: Simply pass through the prompt to Claude Code
   // Claude Code handles slash commands natively
   const prompt = context.prompt || "";
@@ -767,8 +766,8 @@ export async function createPrompt(
       recursive: true,
     });
 
-    // Generate the prompt directly (now async due to slash commands)
-    const promptContent = await generatePrompt(
+    // Generate the prompt directly
+    const promptContent = generatePrompt(
       preparedContext,
       githubData,
       context.inputs.useCommitSigning,

@@ -10,6 +10,12 @@ export type AutoDetectedMode = "tag" | "agent";
 
 export function detectMode(context: GitHubContext): AutoDetectedMode {
   // If prompt is provided, always use agent mode
+  // Reasoning: When users provide explicit instructions via the prompt parameter,
+  // they want Claude to execute those instructions immediately without waiting for
+  // @claude mentions or other triggers. This aligns with the v1.0 philosophy where
+  // Claude Code handles everything - the GitHub Action is just a thin wrapper that
+  // passes through prompts directly to Claude Code for native handling (including
+  // slash commands). This provides the most direct and flexible interaction model.
   if (context.inputs?.prompt) {
     return "agent";
   }
