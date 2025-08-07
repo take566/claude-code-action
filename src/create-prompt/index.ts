@@ -41,10 +41,10 @@ export function buildAllowedToolsString(
 ): string {
   // Tag mode needs these tools to function properly
   let baseTools = [...BASE_ALLOWED_TOOLS];
-  
+
   // Always include the comment update tool for tag mode
   baseTools.push("mcp__github_comment__update_claude_comment");
-  
+
   // Add commit signing tools if enabled
   if (useCommitSigning) {
     baseTools.push(
@@ -63,7 +63,7 @@ export function buildAllowedToolsString(
       "Bash(git rm:*)",
     );
   }
-  
+
   // Add GitHub Actions MCP tools if enabled
   if (includeActionsTools) {
     baseTools.push(
@@ -72,7 +72,7 @@ export function buildAllowedToolsString(
       "mcp__github_ci__download_job_log",
     );
   }
-  
+
   let allAllowedTools = baseTools.join(",");
   if (customAllowedTools && customAllowedTools.length > 0) {
     allAllowedTools = `${allAllowedTools},${customAllowedTools.join(",")}`;
@@ -86,14 +86,14 @@ export function buildDisallowedToolsString(
 ): string {
   // Tag mode: Disable WebSearch and WebFetch by default for security
   let disallowedTools = ["WebSearch", "WebFetch"];
-  
+
   // If user has explicitly allowed some default disallowed tools, remove them
   if (allowedTools && allowedTools.length > 0) {
     disallowedTools = disallowedTools.filter(
       (tool) => !allowedTools.includes(tool),
     );
   }
-  
+
   let allDisallowedTools = disallowedTools.join(",");
   if (customDisallowedTools && customDisallowedTools.length > 0) {
     if (allDisallowedTools) {

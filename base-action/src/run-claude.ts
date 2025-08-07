@@ -72,7 +72,7 @@ export function prepareRunConfig(
   // Build arguments in correct order:
   // 1. -p flag for prompt via pipe
   const claudeArgs = ["-p"];
-  
+
   // 2. User's custom arguments (can override defaults)
   if (options.claudeArgs && options.claudeArgs.trim() !== "") {
     const parsed = parseShellArgs(options.claudeArgs);
@@ -81,7 +81,7 @@ export function prepareRunConfig(
     );
     claudeArgs.push(...customArgs);
   }
-  
+
   // 3. Legacy specific options for backward compatibility
   // These will eventually be removed in favor of claudeArgs
   if (options.allowedTools) {
@@ -108,7 +108,7 @@ export function prepareRunConfig(
   if (options.model) {
     claudeArgs.push("--model", options.model);
   }
-  
+
   // 4. Base args always at the end
   claudeArgs.push(...BASE_ARGS);
 

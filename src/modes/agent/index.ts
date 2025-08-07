@@ -62,10 +62,16 @@ export const agentMode: Mode = {
     // No default tools are enforced - Claude Code's defaults will apply
     // Export user-specified tools only if provided
     if (context.inputs.allowedTools.length > 0) {
-      core.exportVariable("INPUT_ALLOWED_TOOLS", context.inputs.allowedTools.join(","));
+      core.exportVariable(
+        "INPUT_ALLOWED_TOOLS",
+        context.inputs.allowedTools.join(","),
+      );
     }
     if (context.inputs.disallowedTools.length > 0) {
-      core.exportVariable("INPUT_DISALLOWED_TOOLS", context.inputs.disallowedTools.join(","));
+      core.exportVariable(
+        "INPUT_DISALLOWED_TOOLS",
+        context.inputs.disallowedTools.join(","),
+      );
     }
 
     // Agent mode uses a minimal MCP configuration

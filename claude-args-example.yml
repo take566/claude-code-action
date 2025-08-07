@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       prompt:
-        description: 'Prompt for Claude'
+        description: "Prompt for Claude"
         required: true
         type: string
 
@@ -13,14 +13,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Run Claude with custom arguments
         uses: anthropics/claude-code-action@v1
         with:
           mode: agent
           prompt: ${{ github.event.inputs.prompt }}
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          
+
           # New claudeArgs input allows direct CLI argument control
           # Arguments are passed in the order: -p [claudeArgs] [legacy options] [BASE_ARGS]
           claude_args: |
