@@ -61,7 +61,7 @@ describe("shell-quote parseShellArgs", () => {
   test("should filter out non-string results", () => {
     // shell-quote can return objects for operators like | > < etc
     const result = parseShellArgs("echo hello");
-    const filtered = result.filter(arg => typeof arg === "string");
+    const filtered = result.filter((arg) => typeof arg === "string");
     expect(filtered).toEqual(["echo", "hello"]);
   });
 });

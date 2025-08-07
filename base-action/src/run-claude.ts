@@ -114,9 +114,9 @@ export function prepareRunConfig(
   // Parse and append custom arguments (these can override the above)
   if (options.claudeArgs && options.claudeArgs.trim() !== "") {
     const parsed = parseShellArgs(options.claudeArgs);
-    // shell-quote returns an array that can contain strings and objects
-    // We only want string arguments
-    const customArgs = parsed.filter((arg): arg is string => typeof arg === "string");
+    const customArgs = parsed.filter(
+      (arg): arg is string => typeof arg === "string",
+    );
     claudeArgs.push(...customArgs);
   }
 
