@@ -1,0 +1,40 @@
+name: Claude with Custom Args Example
+
+on:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      prompt:
+        description: "Prompt for Claude"
+        required: false
+        default: "Respond with a joke"
+
+jobs:
+  claude-custom:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          
+          # Option 1: Simple prompt with custom args
+          prompt: "Review this code and provide feedback"
+          claude_args: "--max-turns 3 --model claude-3-5-sonnet-latest"
+          
+          # Option 2: Slash command with custom MCP config
+          # prompt: "/review"
+          # claude_args: "--mcp-config /workspace/custom-mcp.json --max-turns 5"
+          
+          # Option 3: Override output format and add custom system prompt
+          # prompt: "Fix the failing tests"
+          # claude_args: "--output-format json --system-prompt 'You are an expert test fixer'"
+
+# How it works:
+# The action will execute: claude -p --verbose --output-format stream-json [your claude_args]
+# Where the prompt is piped via stdin
+
+# Benefits:
+# - Full control over Claude CLI arguments
+# - Use any Claude feature without waiting for action updates  
+# - Override defaults when needed
+# - Combine with existing inputs or use standalone

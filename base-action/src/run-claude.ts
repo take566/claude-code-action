@@ -4,6 +4,7 @@ import { promisify } from "util";
 import { unlink, writeFile, stat } from "fs/promises";
 import { createWriteStream } from "fs";
 import { spawn } from "child_process";
+import { parse as parseShellArgs } from "shell-quote";
 
 const execAsync = promisify(exec);
 
@@ -30,67 +31,6 @@ type PreparedConfig = {
   promptPath: string;
   env: Record<string, string>;
 };
-
-/**
- * Parse shell-style arguments string into array.
- * Handles quoted strings and escaping.
- */
-function parseShellArgs(argsString?: string): string[] {
-  if (!argsString || argsString.trim() === "") {
-    return [];
-  }
-
-  const args: string[] = [];
-  let current = "";
-  let inSingleQuote = false;
-  let inDoubleQuote = false;
-  let escapeNext = false;
-
-  for (let i = 0; i < argsString.length; i++) {
-    const char = argsString[i];
-
-    if (escapeNext) {
-      current += char;
-      escapeNext = false;
-      continue;
-    }
-
-    if (char === "\\") {
-      if (inSingleQuote) {
-        current += char;
-      } else {
-        escapeNext = true;
-      }
-      continue;
-    }
-
-    if (char === "'" && !inDoubleQuote) {
-      inSingleQuote = !inSingleQuote;
-      continue;
-    }
-
-    if (char === '"' && !inSingleQuote) {
-      inDoubleQuote = !inDoubleQuote;
-      continue;
-    }
-
-    if (char === " " && !inSingleQuote && !inDoubleQuote) {
-      if (current) {
-        args.push(current);
-        current = "";
-      }
-      continue;
-    }
-
-    current += char;
-  }
-
-  if (current) {
-    args.push(current);
-  }
-
-  return args;
-}
 
 function parseCustomEnvVars(claudeEnv?: string): Record<string, string> {
   if (!claudeEnv || claudeEnv.trim() === "") {
@@ -172,16 +112,12 @@ export function prepareRunConfig(
   }
 
   // Parse and append custom arguments (these can override the above)
-  if (options.claudeArgs) {
-    const customArgs = parseShellArgs(options.claudeArgs);
-    // Filter out -p flag since we handle prompt via pipe
-    const filteredArgs = customArgs.filter(
-      (arg, index) =>
-        arg !== "-p" &&
-        arg !== "--prompt" &&
-        (index === 0 || (customArgs[index - 1] !== "-p" && customArgs[index - 1] !== "--prompt")),
-    );
-    claudeArgs.push(...filteredArgs);
+  if (options.claudeArgs && options.claudeArgs.trim() !== "") {
+    const parsed = parseShellArgs(options.claudeArgs);
+    // shell-quote returns an array that can contain strings and objects
+    // We only want string arguments
+    const customArgs = parsed.filter((arg): arg is string => typeof arg === "string");
+    claudeArgs.push(...customArgs);
   }
 
   // Parse custom environment variables

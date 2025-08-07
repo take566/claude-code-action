@@ -1,68 +1,9 @@
 import { describe, expect, test } from "bun:test";
+import { parse as parseShellArgs } from "shell-quote";
 
-// Import the function directly from run-claude.ts for testing
-// We'll need to export it first
-function parseShellArgs(argsString?: string): string[] {
-  if (!argsString || argsString.trim() === "") {
-    return [];
-  }
-
-  const args: string[] = [];
-  let current = "";
-  let inSingleQuote = false;
-  let inDoubleQuote = false;
-  let escapeNext = false;
-
-  for (let i = 0; i < argsString.length; i++) {
-    const char = argsString[i];
-
-    if (escapeNext) {
-      current += char;
-      escapeNext = false;
-      continue;
-    }
-
-    if (char === "\\") {
-      if (inSingleQuote) {
-        current += char;
-      } else {
-        escapeNext = true;
-      }
-      continue;
-    }
-
-    if (char === "'" && !inDoubleQuote) {
-      inSingleQuote = !inSingleQuote;
-      continue;
-    }
-
-    if (char === '"' && !inSingleQuote) {
-      inDoubleQuote = !inDoubleQuote;
-      continue;
-    }
-
-    if (char === " " && !inSingleQuote && !inDoubleQuote) {
-      if (current) {
-        args.push(current);
-        current = "";
-      }
-      continue;
-    }
-
-    current += char;
-  }
-
-  if (current) {
-    args.push(current);
-  }
-
-  return args;
-}
-
-describe("parseShellArgs", () => {
+describe("shell-quote parseShellArgs", () => {
   test("should handle empty input", () => {
     expect(parseShellArgs("")).toEqual([]);
-    expect(parseShellArgs(undefined)).toEqual([]);
     expect(parseShellArgs("   ")).toEqual([]);
   });
 
@@ -115,5 +56,12 @@ describe("parseShellArgs", () => {
       "--system-prompt",
       "You are helpful",
     ]);
+  });
+
+  test("should filter out non-string results", () => {
+    // shell-quote can return objects for operators like | > < etc
+    const result = parseShellArgs("echo hello");
+    const filtered = result.filter(arg => typeof arg === "string");
+    expect(filtered).toEqual(["echo", "hello"]);
   });
 });
