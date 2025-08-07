@@ -61,6 +61,10 @@ inputs:
     description: "Timeout in minutes for Claude Code execution"
     required: false
     default: "10"
+  claude_args:
+    description: "Additional arguments to pass directly to Claude CLI (e.g., '--max-turns 3 --mcp-config /path/to/config.json')"
+    required: false
+    default: ""
   experimental_slash_commands_dir:
     description: "Experimental: Directory containing slash command files to install"
     required: false

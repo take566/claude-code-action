@@ -22,6 +22,7 @@ export type ClaudeOptions = {
   fallbackModel?: string;
   timeoutMinutes?: string;
   model?: string;
+  claudeArgs?: string;
 };
 
 type PreparedConfig = {
@@ -29,6 +30,67 @@ type PreparedConfig = {
   promptPath: string;
   env: Record<string, string>;
 };
+
+/**
+ * Parse shell-style arguments string into array.
+ * Handles quoted strings and escaping.
+ */
+function parseShellArgs(argsString?: string): string[] {
+  if (!argsString || argsString.trim() === "") {
+    return [];
+  }
+
+  const args: string[] = [];
+  let current = "";
+  let inSingleQuote = false;
+  let inDoubleQuote = false;
+  let escapeNext = false;
+
+  for (let i = 0; i < argsString.length; i++) {
+    const char = argsString[i];
+
+    if (escapeNext) {
+      current += char;
+      escapeNext = false;
+      continue;
+    }
+
+    if (char === "\\") {
+      if (inSingleQuote) {
+        current += char;
+      } else {
+        escapeNext = true;
+      }
+      continue;
+    }
+
+    if (char === "'" && !inDoubleQuote) {
+      inSingleQuote = !inSingleQuote;
+      continue;
+    }
+
+    if (char === '"' && !inSingleQuote) {
+      inDoubleQuote = !inDoubleQuote;
+      continue;
+    }
+
+    if (char === " " && !inSingleQuote && !inDoubleQuote) {
+      if (current) {
+        args.push(current);
+        current = "";
+      }
+      continue;
+    }
+
+    current += char;
+  }
+
+  if (current) {
+    args.push(current);
+  }
+
+  return args;
+}
 
 function parseCustomEnvVars(claudeEnv?: string): Record<string, string> {
   if (!claudeEnv || claudeEnv.trim() === "") {
@@ -66,8 +128,10 @@ export function prepareRunConfig(
   promptPath: string,
   options: ClaudeOptions,
 ): PreparedConfig {
+  // Start with base args
   const claudeArgs = [...BASE_ARGS];
 
+  // Add specific options first (these can be overridden by claudeArgs)
   if (options.allowedTools) {
     claudeArgs.push("--allowedTools", options.allowedTools);
   }
@@ -105,6 +169,19 @@ export function prepareRunConfig(
         `timeoutMinutes must be a positive number, got: ${options.timeoutMinutes}`,
       );
     }
+  }
+
+  // Parse and append custom arguments (these can override the above)
+  if (options.claudeArgs) {
+    const customArgs = parseShellArgs(options.claudeArgs);
+    // Filter out -p flag since we handle prompt via pipe
+    const filteredArgs = customArgs.filter(
+      (arg, index) =>
+        arg !== "-p" &&
+        arg !== "--prompt" &&
+        (index === 0 || (customArgs[index - 1] !== "-p" && customArgs[index - 1] !== "--prompt")),
+    );
+    claudeArgs.push(...filteredArgs);
   }
 
   // Parse custom environment variables
@@ -147,8 +224,14 @@ export async function runClaude(promptPath: string, options: ClaudeOptions) {
     console.log(`Custom environment variables: ${envKeys}`);
   }
 
+  // Log custom arguments if any
+  if (options.claudeArgs && options.claudeArgs.trim() !== "") {
+    console.log(`Custom Claude arguments: ${options.claudeArgs}`);
+  }
+
   // Output to console
   console.log(`Running Claude with prompt from file: ${config.promptPath}`);
+  console.log(`Full command: claude ${config.claudeArgs.join(" ")}`);
 
   // Start sending prompt to pipe in background
   const catProcess = spawn("cat", [config.promptPath], {
