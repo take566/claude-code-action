@@ -10,7 +10,8 @@ const execAsync = promisify(exec);
 
 const PIPE_PATH = `${process.env.RUNNER_TEMP}/claude_prompt_pipe`;
 const EXECUTION_FILE = `${process.env.RUNNER_TEMP}/claude-execution-output.json`;
-const BASE_ARGS = ["-p", "--verbose", "--output-format", "stream-json"];
+// These base args are always appended at the end
+const BASE_ARGS = ["--verbose", "--output-format", "stream-json"];
 
 export type ClaudeOptions = {
   allowedTools?: string;
@@ -68,10 +69,21 @@ export function prepareRunConfig(
   promptPath: string,
   options: ClaudeOptions,
 ): PreparedConfig {
-  // Start with base args
-  const claudeArgs = [...BASE_ARGS];
-
-  // Add specific options first (these can be overridden by claudeArgs)
+  // Build arguments in correct order:
+  // 1. -p flag for prompt via pipe
+  const claudeArgs = ["-p"];
+  
+  // 2. User's custom arguments (can override defaults)
+  if (options.claudeArgs && options.claudeArgs.trim() !== "") {
+    const parsed = parseShellArgs(options.claudeArgs);
+    const customArgs = parsed.filter(
+      (arg): arg is string => typeof arg === "string",
+    );
+    claudeArgs.push(...customArgs);
+  }
+  
+  // 3. Legacy specific options for backward compatibility
+  // These will eventually be removed in favor of claudeArgs
   if (options.allowedTools) {
     claudeArgs.push("--allowedTools", options.allowedTools);
   }
@@ -79,12 +91,6 @@ export function prepareRunConfig(
     claudeArgs.push("--disallowedTools", options.disallowedTools);
   }
   if (options.maxTurns) {
-    const maxTurnsNum = parseInt(options.maxTurns, 10);
-    if (isNaN(maxTurnsNum) || maxTurnsNum <= 0) {
-      throw new Error(
-        `maxTurns must be a positive number, got: ${options.maxTurns}`,
-      );
-    }
     claudeArgs.push("--max-turns", options.maxTurns);
   }
   if (options.mcpConfig) {
@@ -102,6 +108,11 @@ export function prepareRunConfig(
   if (options.model) {
     claudeArgs.push("--model", options.model);
   }
+  
+  // 4. Base args always at the end
+  claudeArgs.push(...BASE_ARGS);
+
+  // Validate timeout if provided (affects process wrapper, not Claude)
   if (options.timeoutMinutes) {
     const timeoutMinutesNum = parseInt(options.timeoutMinutes, 10);
     if (isNaN(timeoutMinutesNum) || timeoutMinutesNum <= 0) {
@@ -109,15 +120,6 @@ export function prepareRunConfig(
         `timeoutMinutes must be a positive number, got: ${options.timeoutMinutes}`,
       );
     }
-  }
-
-  // Parse and append custom arguments (these can override the above)
-  if (options.claudeArgs && options.claudeArgs.trim() !== "") {
-    const parsed = parseShellArgs(options.claudeArgs);
-    const customArgs = parsed.filter(
-      (arg): arg is string => typeof arg === "string",
-    );
-    claudeArgs.push(...customArgs);
   }
 
   // Parse custom environment variables

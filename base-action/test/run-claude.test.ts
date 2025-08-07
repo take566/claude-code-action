@@ -8,7 +8,7 @@ describe("prepareRunConfig", () => {
     const options: ClaudeOptions = {};
     const prepared = prepareRunConfig("/tmp/test-prompt.txt", options);
 
-    expect(prepared.claudeArgs.slice(0, 4)).toEqual([
+    expect(prepared.claudeArgs).toEqual([
       "-p",
       "--verbose",
       "--output-format",
@@ -125,13 +125,13 @@ describe("prepareRunConfig", () => {
 
     expect(prepared.claudeArgs).toEqual([
       "-p",
-      "--verbose",
-      "--output-format",
-      "stream-json",
       "--allowedTools",
       "Bash,Read",
       "--max-turns",
       "3",
+      "--verbose",
+      "--output-format",
+      "stream-json",
     ]);
   });
 
@@ -149,9 +149,6 @@ describe("prepareRunConfig", () => {
 
     expect(prepared.claudeArgs).toEqual([
       "-p",
-      "--verbose",
-      "--output-format",
-      "stream-json",
       "--allowedTools",
       "Bash,Read",
       "--disallowedTools",
@@ -166,10 +163,13 @@ describe("prepareRunConfig", () => {
       "Be concise",
       "--fallback-model",
       "claude-sonnet-4-20250514",
+      "--verbose",
+      "--output-format",
+      "stream-json",
     ]);
   });
 
-  describe("maxTurns validation", () => {
+  describe("maxTurns handling", () => {
     test("should accept valid maxTurns value", () => {
       const options: ClaudeOptions = { maxTurns: "5" };
       const prepared = prepareRunConfig("/tmp/test-prompt.txt", options);
@@ -177,25 +177,28 @@ describe("prepareRunConfig", () => {
       expect(prepared.claudeArgs).toContain("5");
     });
 
-    test("should throw error for non-numeric maxTurns", () => {
+    test("should pass through non-numeric maxTurns without validation (v1.0)", () => {
       const options: ClaudeOptions = { maxTurns: "abc" };
-      expect(() => prepareRunConfig("/tmp/test-prompt.txt", options)).toThrow(
-        "maxTurns must be a positive number, got: abc",
-      );
+      const prepared = prepareRunConfig("/tmp/test-prompt.txt", options);
+      // v1.0: No validation - let Claude handle it
+      expect(prepared.claudeArgs).toContain("--max-turns");
+      expect(prepared.claudeArgs).toContain("abc");
     });
 
-    test("should throw error for negative maxTurns", () => {
+    test("should pass through negative maxTurns without validation (v1.0)", () => {
       const options: ClaudeOptions = { maxTurns: "-1" };
-      expect(() => prepareRunConfig("/tmp/test-prompt.txt", options)).toThrow(
-        "maxTurns must be a positive number, got: -1",
-      );
+      const prepared = prepareRunConfig("/tmp/test-prompt.txt", options);
+      // v1.0: No validation - let Claude handle it
+      expect(prepared.claudeArgs).toContain("--max-turns");
+      expect(prepared.claudeArgs).toContain("-1");
     });
 
-    test("should throw error for zero maxTurns", () => {
+    test("should pass through zero maxTurns without validation (v1.0)", () => {
       const options: ClaudeOptions = { maxTurns: "0" };
-      expect(() => prepareRunConfig("/tmp/test-prompt.txt", options)).toThrow(
-        "maxTurns must be a positive number, got: 0",
-      );
+      const prepared = prepareRunConfig("/tmp/test-prompt.txt", options);
+      // v1.0: No validation - let Claude handle it
+      expect(prepared.claudeArgs).toContain("--max-turns");
+      expect(prepared.claudeArgs).toContain("0");
     });
   });
 
@@ -226,6 +229,75 @@ describe("prepareRunConfig", () => {
       expect(() => prepareRunConfig("/tmp/test-prompt.txt", options)).toThrow(
         "timeoutMinutes must be a positive number, got: 0",
       );
+    });
+  });
+
+  describe("claudeArgs handling", () => {
+    test("should parse and include custom claude arguments", () => {
+      const options: ClaudeOptions = {
+        claudeArgs: "--max-turns 10 --model claude-3-opus-20240229",
+      };
+      const prepared = prepareRunConfig("/tmp/test-prompt.txt", options);
+
+      expect(prepared.claudeArgs).toEqual([
+        "-p",
+        "--max-turns",
+        "10",
+        "--model",
+        "claude-3-opus-20240229",
+        "--verbose",
+        "--output-format",
+        "stream-json",
+      ]);
+    });
+
+    test("should handle claudeArgs with legacy options", () => {
+      const options: ClaudeOptions = {
+        claudeArgs: "--max-turns 10",
+        allowedTools: "Bash,Read",
+      };
+      const prepared = prepareRunConfig("/tmp/test-prompt.txt", options);
+
+      expect(prepared.claudeArgs).toEqual([
+        "-p",
+        "--max-turns",
+        "10",
+        "--allowedTools",
+        "Bash,Read",
+        "--verbose",
+        "--output-format",
+        "stream-json",
+      ]);
+    });
+
+    test("should handle empty claudeArgs", () => {
+      const options: ClaudeOptions = {
+        claudeArgs: "",
+      };
+      const prepared = prepareRunConfig("/tmp/test-prompt.txt", options);
+
+      expect(prepared.claudeArgs).toEqual([
+        "-p",
+        "--verbose",
+        "--output-format",
+        "stream-json",
+      ]);
+    });
+
+    test("should handle claudeArgs with quoted strings", () => {
+      const options: ClaudeOptions = {
+        claudeArgs: '--system-prompt "You are a helpful assistant"',
+      };
+      const prepared = prepareRunConfig("/tmp/test-prompt.txt", options);
+
+      expect(prepared.claudeArgs).toEqual([
+        "-p",
+        "--system-prompt",
+        "You are a helpful assistant",
+        "--verbose",
+        "--output-format",
+        "stream-json",
+      ]);
     });
   });
 

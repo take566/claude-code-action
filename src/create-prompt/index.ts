@@ -23,6 +23,7 @@ import { GITHUB_SERVER_URL } from "../github/api/config";
 import type { Mode, ModeContext } from "../modes/types";
 export type { CommonFields, PreparedContext } from "./types";
 
+// Tag mode defaults - these tools are needed for tag mode to function
 const BASE_ALLOWED_TOOLS = [
   "Edit",
   "MultiEdit",
@@ -32,18 +33,18 @@ const BASE_ALLOWED_TOOLS = [
   "Read",
   "Write",
 ];
-const DISALLOWED_TOOLS = ["WebSearch", "WebFetch"];
 
 export function buildAllowedToolsString(
   customAllowedTools?: string[],
   includeActionsTools: boolean = false,
   useCommitSigning: boolean = false,
 ): string {
+  // Tag mode needs these tools to function properly
   let baseTools = [...BASE_ALLOWED_TOOLS];
-
-  // Always include the comment update tool from the comment server
+  
+  // Always include the comment update tool for tag mode
   baseTools.push("mcp__github_comment__update_claude_comment");
-
+  
   // Add commit signing tools if enabled
   if (useCommitSigning) {
     baseTools.push(
@@ -51,7 +52,7 @@ export function buildAllowedToolsString(
       "mcp__github_file_ops__delete_files",
     );
   } else {
-    // When not using commit signing, add specific Bash git commands only
+    // When not using commit signing, add specific Bash git commands
     baseTools.push(
       "Bash(git add:*)",
       "Bash(git commit:*)",
@@ -62,7 +63,7 @@ export function buildAllowedToolsString(
       "Bash(git rm:*)",
     );
   }
-
+  
   // Add GitHub Actions MCP tools if enabled
   if (includeActionsTools) {
     baseTools.push(
@@ -71,7 +72,7 @@ export function buildAllowedToolsString(
       "mcp__github_ci__download_job_log",
     );
   }
-
+  
   let allAllowedTools = baseTools.join(",");
   if (customAllowedTools && customAllowedTools.length > 0) {
     allAllowedTools = `${allAllowedTools},${customAllowedTools.join(",")}`;
@@ -83,15 +84,16 @@ export function buildDisallowedToolsString(
   customDisallowedTools?: string[],
   allowedTools?: string[],
 ): string {
-  let disallowedTools = [...DISALLOWED_TOOLS];
-
-  // If user has explicitly allowed some hardcoded disallowed tools, remove them from disallowed list
+  // Tag mode: Disable WebSearch and WebFetch by default for security
+  let disallowedTools = ["WebSearch", "WebFetch"];
+  
+  // If user has explicitly allowed some default disallowed tools, remove them
   if (allowedTools && allowedTools.length > 0) {
     disallowedTools = disallowedTools.filter(
       (tool) => !allowedTools.includes(tool),
     );
   }
-
+  
   let allDisallowedTools = disallowedTools.join(",");
   if (customDisallowedTools && customDisallowedTools.length > 0) {
     if (allDisallowedTools) {
