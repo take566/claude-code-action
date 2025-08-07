@@ -106,7 +106,9 @@ export function parseGitHubContext(): GitHubContext {
   const context = github.context;
 
   // Mode is optional in v1.0 (auto-detected)
-  const modeInput = process.env.MODE ? process.env.MODE as ModeName : undefined;
+  const modeInput = process.env.MODE
+    ? (process.env.MODE as ModeName)
+    : undefined;
 
   const commonFields = {
     runId: process.env.GITHUB_RUN_ID!,
@@ -120,9 +122,11 @@ export function parseGitHubContext(): GitHubContext {
     inputs: {
       mode: modeInput,
       // v1.0: Unified prompt field with fallback to legacy fields
-      prompt: process.env.PROMPT || 
-              process.env.OVERRIDE_PROMPT || 
-              process.env.DIRECT_PROMPT || "",
+      prompt:
+        process.env.PROMPT ||
+        process.env.OVERRIDE_PROMPT ||
+        process.env.DIRECT_PROMPT ||
+        "",
       triggerPhrase: process.env.TRIGGER_PHRASE ?? "@claude",
       assigneeTrigger: process.env.ASSIGNEE_TRIGGER ?? "",
       labelTrigger: process.env.LABEL_TRIGGER ?? "",

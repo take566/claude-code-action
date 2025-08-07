@@ -94,7 +94,7 @@ export const reviewMode: Mode = {
     if (userPrompt) {
       return userPrompt;
     }
-    
+
     // Default to /review slash command content
     // This will be expanded by the slash command system
 

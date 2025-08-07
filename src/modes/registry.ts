@@ -30,10 +30,7 @@ const modes = {
  * @param explicitMode Optional explicit mode override (for backward compatibility)
  * @returns The appropriate mode for the context
  */
-export function getMode(
-  context: GitHubContext,
-  explicitMode?: string,
-): Mode {
+export function getMode(context: GitHubContext, explicitMode?: string): Mode {
   let modeName: AutoDetectedMode;
 
   if (explicitMode && isValidModeV1(explicitMode)) {
@@ -41,7 +38,9 @@ export function getMode(
     modeName = mapLegacyMode(explicitMode);
   } else {
     modeName = detectMode(context);
-    console.log(`Auto-detected mode: ${modeName} for event: ${context.eventName}`);
+    console.log(
+      `Auto-detected mode: ${modeName} for event: ${context.eventName}`,
+    );
   }
 
   const mode = modes[modeName];

@@ -35,11 +35,11 @@ export async function resolveSlashCommand(
   const parts = prompt.slice(1).split(" ");
   const commandPath = parts[0];
   const args = parts.slice(1);
-  
+
   if (!commandPath) {
     return { expandedPrompt: prompt };
   }
-  
+
   const commandParts = commandPath.split("/");
 
   try {
@@ -52,10 +52,7 @@ export async function resolveSlashCommand(
     let expandedContent = command.content;
 
     if (args.length > 0) {
-      expandedContent = expandedContent.replace(
-        /\{args\}/g,
-        args.join(" "),
-      );
+      expandedContent = expandedContent.replace(/\{args\}/g, args.join(" "));
     }
 
     if (variables) {
@@ -107,7 +104,7 @@ function parseCommandFile(name: string, content: string): SlashCommand {
   if (frontmatterMatch && frontmatterMatch[1]) {
     try {
       const parsedYaml = yaml.load(frontmatterMatch[1]);
-      if (parsedYaml && typeof parsedYaml === 'object') {
+      if (parsedYaml && typeof parsedYaml === "object") {
         metadata = parsedYaml as SlashCommandMetadata;
       }
       commandContent = frontmatterMatch[2]?.trim() || content;

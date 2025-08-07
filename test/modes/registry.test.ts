@@ -7,6 +7,12 @@ import { createMockContext, createMockAutomationContext } from "../mockContext";
 describe("Mode Registry", () => {
   const mockContext = createMockContext({
     eventName: "issue_comment",
+    payload: {
+      action: "created",
+      comment: {
+        body: "Test comment without trigger",
+      },
+    } as any,
   });
 
   const mockWorkflowDispatchContext = createMockAutomationContext({
@@ -17,9 +23,9 @@ describe("Mode Registry", () => {
     eventName: "schedule",
   });
 
-  test("getMode auto-detects tag mode for issue_comment", () => {
+  test("getMode auto-detects agent mode for issue_comment without trigger", () => {
     const mode = getMode(mockContext);
-    // Issue comment without trigger won't activate tag mode, defaults to agent
+    // Agent mode is the default when no trigger is found
     expect(mode).toBe(agentMode);
     expect(mode.name).toBe("agent");
   });
@@ -33,7 +39,7 @@ describe("Mode Registry", () => {
   test("getMode can use explicit mode override for review", () => {
     const mode = getMode(mockContext, "review");
     expect(mode).toBe(reviewMode);
-    expect(mode.name).toBe("review");
+    expect(mode.name).toBe("experimental-review");
   });
 
   test("getMode auto-detects agent for workflow_dispatch", () => {
@@ -51,7 +57,7 @@ describe("Mode Registry", () => {
   test("getMode supports legacy experimental-review mode name", () => {
     const mode = getMode(mockContext, "experimental-review");
     expect(mode).toBe(reviewMode);
-    expect(mode.name).toBe("review");
+    expect(mode.name).toBe("experimental-review");
   });
 
   test("getMode auto-detects review mode for PR opened", () => {
@@ -62,13 +68,14 @@ describe("Mode Registry", () => {
     });
     const mode = getMode(prContext);
     expect(mode).toBe(reviewMode);
-    expect(mode.name).toBe("agent");
+    expect(mode.name).toBe("experimental-review");
   });
 
-  test("getMode throws error for invalid mode override", () => {
-    expect(() => getMode(mockContext, "invalid")).toThrow(
-      "Mode 'agent' not found. This should not happen. Please report this issue.",
-    );
+  test("getMode falls back to auto-detection for invalid mode override", () => {
+    const mode = getMode(mockContext, "invalid");
+    // Should fall back to auto-detection, which returns agent for issue_comment without trigger
+    expect(mode).toBe(agentMode);
+    expect(mode.name).toBe("agent");
   });
 
   test("isValidMode returns true for all valid modes", () => {

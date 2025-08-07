@@ -534,42 +534,54 @@ export async function generatePrompt(
   mode: Mode,
 ): Promise<string> {
   // Check for unified prompt field first (v1.0)
-  let prompt = context.prompt || context.overridePrompt || context.directPrompt || "";
-  
+  let prompt =
+    context.prompt || context.overridePrompt || context.directPrompt || "";
+
   // Handle slash commands
   if (prompt.startsWith("/")) {
     const variables = {
       repository: context.repository,
-      pr_number: context.eventData.isPR && 'prNumber' in context.eventData ? context.eventData.prNumber : "",
-      issue_number: !context.eventData.isPR && 'issueNumber' in context.eventData ? context.eventData.issueNumber : "",
+      pr_number:
+        context.eventData.isPR && "prNumber" in context.eventData
+          ? context.eventData.prNumber
+          : "",
+      issue_number:
+        !context.eventData.isPR && "issueNumber" in context.eventData
+          ? context.eventData.issueNumber
+          : "",
       branch: context.eventData.claudeBranch || "",
       base_branch: context.eventData.baseBranch || "",
       trigger_user: context.triggerUsername,
     };
-    
+
     const resolved = await resolveSlashCommand(prompt, variables);
-    
+
     // Apply any tools from the slash command
     if (resolved.tools && resolved.tools.length > 0) {
       const currentAllowedTools = process.env.ALLOWED_TOOLS || "";
       const newTools = resolved.tools.join(",");
-      const combinedTools = currentAllowedTools ? `${currentAllowedTools},${newTools}` : newTools;
+      const combinedTools = currentAllowedTools
+        ? `${currentAllowedTools},${newTools}`
+        : newTools;
       core.exportVariable("ALLOWED_TOOLS", combinedTools);
     }
-    
+
     // Apply any settings from the slash command
     if (resolved.settings) {
-      core.exportVariable("SLASH_COMMAND_SETTINGS", JSON.stringify(resolved.settings));
+      core.exportVariable(
+        "SLASH_COMMAND_SETTINGS",
+        JSON.stringify(resolved.settings),
+      );
     }
-    
+
     prompt = resolved.expandedPrompt;
   }
-  
+
   // If we have a prompt, use it (with variable substitution)
   if (prompt) {
     return substitutePromptVariables(prompt, context, githubData);
   }
-  
+
   // Otherwise use the mode's default prompt generator
   return mode.generatePrompt(context, githubData, useCommitSigning);
 }
