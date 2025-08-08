@@ -27,8 +27,8 @@ const defaultRepository = {
   full_name: "test-owner/test-repo",
 };
 
-type MockContextOverrides = Omit<Partial<ParsedGitHubContext>, 'inputs'> & {
-  inputs?: Partial<ParsedGitHubContext['inputs']>;
+type MockContextOverrides = Omit<Partial<ParsedGitHubContext>, "inputs"> & {
+  inputs?: Partial<ParsedGitHubContext["inputs"]>;
 };
 
 export const createMockContext = (
@@ -46,15 +46,15 @@ export const createMockContext = (
     inputs: defaultInputs,
   };
 
-  const mergedInputs = overrides.inputs 
+  const mergedInputs = overrides.inputs
     ? { ...defaultInputs, ...overrides.inputs }
     : defaultInputs;
 
   return { ...baseContext, ...overrides, inputs: mergedInputs };
 };
 
-type MockAutomationOverrides = Omit<Partial<AutomationContext>, 'inputs'> & {
-  inputs?: Partial<AutomationContext['inputs']>;
+type MockAutomationOverrides = Omit<Partial<AutomationContext>, "inputs"> & {
+  inputs?: Partial<AutomationContext["inputs"]>;
 };
 
 export const createMockAutomationContext = (
@@ -70,7 +70,7 @@ export const createMockAutomationContext = (
     inputs: defaultInputs,
   };
 
-  const mergedInputs = overrides.inputs 
+  const mergedInputs = overrides.inputs
     ? { ...defaultInputs, ...overrides.inputs }
     : defaultInputs;
 

@@ -6,6 +6,7 @@
  */
 
 import * as core from "@actions/core";
+import { writeFile } from "fs/promises";
 import { setupGitHubToken } from "../github/token";
 import { checkWritePermissions } from "../github/validation/permissions";
 import { createOctokit } from "../github/api/client";
@@ -57,8 +58,11 @@ async function run() {
       githubToken,
     });
 
-    // Set the MCP config output
+    // Write MCP config to a file and set the file path as output
+    const mcpConfigPath = `${process.env.RUNNER_TEMP}/claude-mcp-config.json`;
+    await writeFile(mcpConfigPath, result.mcpConfig);
     core.setOutput("mcp_config", result.mcpConfig);
+    core.setOutput("mcp_config_file", mcpConfigPath);
 
     // Step 6: Get system prompt from mode if available
     if (mode.getSystemPrompt) {
