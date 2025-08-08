@@ -540,7 +540,7 @@ describe("prepareMcpConfig", () => {
     process.env.GITHUB_WORKSPACE = oldEnv;
   });
 
-  test("should include github_ci server when context.isPR is true and actions:read permission is granted", async () => {
+  test("should include github_ci server when context.isPR is true and workflow token is present", async () => {
     const oldEnv = process.env.DEFAULT_WORKFLOW_TOKEN;
     process.env.DEFAULT_WORKFLOW_TOKEN = "workflow-token";
 
@@ -587,9 +587,9 @@ describe("prepareMcpConfig", () => {
     expect(parsed.mcpServers.github_file_ops).toBeDefined();
   });
 
-  test("should not include github_ci server when actions:read permission is not granted", async () => {
+  test("should not include github_ci server when workflow token is not present", async () => {
     const oldTokenEnv = process.env.DEFAULT_WORKFLOW_TOKEN;
-    process.env.DEFAULT_WORKFLOW_TOKEN = "workflow-token";
+    delete process.env.DEFAULT_WORKFLOW_TOKEN;
 
     const result = await prepareMcpConfig({
       githubToken: "test-token",
@@ -608,7 +608,7 @@ describe("prepareMcpConfig", () => {
     process.env.DEFAULT_WORKFLOW_TOKEN = oldTokenEnv;
   });
 
-  test("should parse additional_permissions with multiple lines correctly", async () => {
+  test("should include github_ci server when workflow token is present for PR context", async () => {
     const oldTokenEnv = process.env.DEFAULT_WORKFLOW_TOKEN;
     process.env.DEFAULT_WORKFLOW_TOKEN = "workflow-token";
 
@@ -636,7 +636,7 @@ describe("prepareMcpConfig", () => {
     process.env.DEFAULT_WORKFLOW_TOKEN = oldTokenEnv;
   });
 
-  test("should warn when actions:read is requested but token lacks permission", async () => {
+  test("should warn when workflow token lacks actions:read permission", async () => {
     const oldTokenEnv = process.env.DEFAULT_WORKFLOW_TOKEN;
     process.env.DEFAULT_WORKFLOW_TOKEN = "invalid-token";
 

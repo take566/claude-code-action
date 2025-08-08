@@ -111,10 +111,10 @@ export async function prepareMcpConfig(
       };
     }
 
-    // CI server is disabled by default in v1.0 (users can enable via claudeArgs)
-    const hasActionsReadPermission = false;
+    // CI server is included when we have a workflow token and context is a PR
+    const hasWorkflowToken = !!process.env.DEFAULT_WORKFLOW_TOKEN;
 
-    if (context.isPR && hasActionsReadPermission) {
+    if (context.isPR && hasWorkflowToken) {
       // Verify the token actually has actions:read permission
       const actuallyHasPermission = await checkActionsReadPermission(
         process.env.DEFAULT_WORKFLOW_TOKEN || "",
