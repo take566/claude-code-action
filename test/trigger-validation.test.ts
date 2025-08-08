@@ -35,6 +35,7 @@ describe("checkContainsTrigger", () => {
           branchPrefix: "claude/",
           useStickyComment: false,
           useCommitSigning: false,
+          allowedBots: "",
         },
       });
       expect(checkContainsTrigger(context)).toBe(true);
@@ -62,6 +63,7 @@ describe("checkContainsTrigger", () => {
           branchPrefix: "claude/",
           useStickyComment: false,
           useCommitSigning: false,
+          allowedBots: "",
         },
       });
       expect(checkContainsTrigger(context)).toBe(false);
@@ -273,6 +275,7 @@ describe("checkContainsTrigger", () => {
           branchPrefix: "claude/",
           useStickyComment: false,
           useCommitSigning: false,
+          allowedBots: "",
         },
       });
       expect(checkContainsTrigger(context)).toBe(true);
@@ -301,6 +304,7 @@ describe("checkContainsTrigger", () => {
           branchPrefix: "claude/",
           useStickyComment: false,
           useCommitSigning: false,
+          allowedBots: "",
         },
       });
       expect(checkContainsTrigger(context)).toBe(true);
@@ -329,6 +333,7 @@ describe("checkContainsTrigger", () => {
           branchPrefix: "claude/",
           useStickyComment: false,
           useCommitSigning: false,
+          allowedBots: "",
         },
       });
       expect(checkContainsTrigger(context)).toBe(false);

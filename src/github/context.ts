@@ -69,6 +69,7 @@ type BaseContext = {
     branchPrefix: string;
     useStickyComment: boolean;
     useCommitSigning: boolean;
+    allowedBots: string;
   };
 };
 
@@ -115,6 +116,7 @@ export function parseGitHubContext(): GitHubContext {
       branchPrefix: process.env.BRANCH_PREFIX ?? "claude/",
       useStickyComment: process.env.USE_STICKY_COMMENT === "true",
       useCommitSigning: process.env.USE_COMMIT_SIGNING === "true",
+      allowedBots: process.env.ALLOWED_BOTS ?? "",
     },
   };
 

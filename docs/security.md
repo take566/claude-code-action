@@ -3,7 +3,7 @@
 ## Access Control
 
 - **Repository Access**: The action can only be triggered by users with write access to the repository
-- **No Bot Triggers**: GitHub Apps and bots cannot trigger this action
+- **Bot User Control**: By default, GitHub Apps and bots cannot trigger this action for security reasons. Use the `allowed_bots` parameter to enable specific bots or all bots
 - **Token Permissions**: The GitHub app receives only a short-lived token scoped specifically to the repository it's operating in
 - **No Cross-Repository Access**: Each action invocation is limited to the repository where it was triggered
 - **Limited Scope**: The token cannot access other repositories or perform actions beyond the configured permissions

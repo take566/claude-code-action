@@ -23,6 +23,10 @@ inputs:
     description: "The prefix to use for Claude branches (defaults to 'claude/', use 'claude-' for dash format)"
     required: false
     default: "claude/"
+  allowed_bots:
+    description: "Comma-separated list of allowed bot usernames, or '*' to allow all bots. Empty string (default) allows no bots."
+    required: false
+    default: ""
 
   # Claude Code configuration
   prompt:
@@ -110,6 +114,7 @@ runs:
         BASE_BRANCH: ${{ inputs.base_branch }}
         BRANCH_PREFIX: ${{ inputs.branch_prefix }}
         OVERRIDE_GITHUB_TOKEN: ${{ inputs.github_token }}
+        ALLOWED_BOTS: ${{ inputs.allowed_bots }}
         GITHUB_RUN_ID: ${{ github.run_id }}
         USE_STICKY_COMMENT: ${{ inputs.use_sticky_comment }}
         DEFAULT_WORKFLOW_TOKEN: ${{ github.token }}
@@ -125,7 +130,7 @@ runs:
         echo "Base-action dependencies installed"
         cd -
         # Install Claude Code globally
-        bun install -g @anthropic-ai/claude-code@1.0.70
+        bun install -g @anthropic-ai/claude-code@1.0.71
 
     - name: Setup Network Restrictions
       if: steps.prepare.outputs.contains_trigger == 'true' && inputs.experimental_allowed_domains != ''

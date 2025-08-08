@@ -31,6 +31,7 @@ describe("prepareMcpConfig", () => {
       branchPrefix: "",
       useStickyComment: false,
       useCommitSigning: false,
+      allowedBots: "",
     },
   };
 

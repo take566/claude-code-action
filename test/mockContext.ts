@@ -18,6 +18,7 @@ const defaultInputs = {
   branchPrefix: "claude/",
   useStickyComment: false,
   useCommitSigning: false,
+  allowedBots: "",
 };
 
 const defaultRepository = {
