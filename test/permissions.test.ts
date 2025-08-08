@@ -64,12 +64,8 @@ describe("checkWritePermissions", () => {
       triggerPhrase: "@claude",
       assigneeTrigger: "",
       labelTrigger: "",
-      allowedTools: [],
-      disallowedTools: [],
-      customInstructions: "",
       branchPrefix: "claude/",
       useStickyComment: false,
-      additionalPermissions: new Map(),
       useCommitSigning: false,
     },
   });

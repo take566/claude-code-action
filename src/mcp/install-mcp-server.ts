@@ -111,9 +111,8 @@ export async function prepareMcpConfig(
       };
     }
 
-    // Only add CI server if we have actions:read permission and we're in a PR context
-    const hasActionsReadPermission =
-      context.inputs.additionalPermissions.get("actions") === "read";
+    // CI server is disabled by default in v1.0 (users can enable via claudeArgs)
+    const hasActionsReadPermission = false;
 
     if (context.isPR && hasActionsReadPermission) {
       // Verify the token actually has actions:read permission

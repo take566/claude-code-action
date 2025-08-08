@@ -10,20 +10,10 @@ const execAsync = promisify(exec);
 
 const PIPE_PATH = `${process.env.RUNNER_TEMP}/claude_prompt_pipe`;
 const EXECUTION_FILE = `${process.env.RUNNER_TEMP}/claude-execution-output.json`;
-// These base args are always appended at the end
 const BASE_ARGS = ["--verbose", "--output-format", "stream-json"];
 
 export type ClaudeOptions = {
-  allowedTools?: string;
-  disallowedTools?: string;
-  maxTurns?: string;
-  mcpConfig?: string;
-  systemPrompt?: string;
-  appendSystemPrompt?: string;
-  claudeEnv?: string;
-  fallbackModel?: string;
   timeoutMinutes?: string;
-  model?: string;
   claudeArgs?: string;
 };
 
@@ -33,48 +23,19 @@ type PreparedConfig = {
   env: Record<string, string>;
 };
 
-function parseCustomEnvVars(claudeEnv?: string): Record<string, string> {
-  if (!claudeEnv || claudeEnv.trim() === "") {
-    return {};
-  }
-
-  const customEnv: Record<string, string> = {};
-
-  // Split by lines and parse each line as KEY: VALUE
-  const lines = claudeEnv.split("\n");
-
-  for (const line of lines) {
-    const trimmedLine = line.trim();
-    if (trimmedLine === "" || trimmedLine.startsWith("#")) {
-      continue; // Skip empty lines and comments
-    }
-
-    const colonIndex = trimmedLine.indexOf(":");
-    if (colonIndex === -1) {
-      continue; // Skip lines without colons
-    }
-
-    const key = trimmedLine.substring(0, colonIndex).trim();
-    const value = trimmedLine.substring(colonIndex + 1).trim();
-
-    if (key) {
-      customEnv[key] = value;
-    }
-  }
-
-  return customEnv;
-}
-
 export function prepareRunConfig(
   promptPath: string,
   options: ClaudeOptions,
 ): PreparedConfig {
-  // Build arguments in correct order:
-  // 1. -p flag for prompt via pipe
+  // Build Claude CLI arguments:
+  // 1. Prompt flag (always first)
+  // 2. User's claudeArgs (full control)
+  // 3. BASE_ARGS (always last, cannot be overridden)
+
   const claudeArgs = ["-p"];
 
-  // 2. User's custom arguments (can override defaults)
-  if (options.claudeArgs && options.claudeArgs.trim() !== "") {
+  // Parse and add user's custom Claude arguments
+  if (options.claudeArgs?.trim()) {
     const parsed = parseShellArgs(options.claudeArgs);
     const customArgs = parsed.filter(
       (arg): arg is string => typeof arg === "string",
@@ -82,34 +43,7 @@ export function prepareRunConfig(
     claudeArgs.push(...customArgs);
   }
 
-  // 3. Legacy specific options for backward compatibility
-  // These will eventually be removed in favor of claudeArgs
-  if (options.allowedTools) {
-    claudeArgs.push("--allowedTools", options.allowedTools);
-  }
-  if (options.disallowedTools) {
-    claudeArgs.push("--disallowedTools", options.disallowedTools);
-  }
-  if (options.maxTurns) {
-    claudeArgs.push("--max-turns", options.maxTurns);
-  }
-  if (options.mcpConfig) {
-    claudeArgs.push("--mcp-config", options.mcpConfig);
-  }
-  if (options.systemPrompt) {
-    claudeArgs.push("--system-prompt", options.systemPrompt);
-  }
-  if (options.appendSystemPrompt) {
-    claudeArgs.push("--append-system-prompt", options.appendSystemPrompt);
-  }
-  if (options.fallbackModel) {
-    claudeArgs.push("--fallback-model", options.fallbackModel);
-  }
-  if (options.model) {
-    claudeArgs.push("--model", options.model);
-  }
-
-  // 4. Base args always at the end
+  // BASE_ARGS are always appended last (cannot be overridden)
   claudeArgs.push(...BASE_ARGS);
 
   // Validate timeout if provided (affects process wrapper, not Claude)
@@ -122,13 +56,10 @@ export function prepareRunConfig(
     }
   }
 
-  // Parse custom environment variables
-  const customEnv = parseCustomEnvVars(options.claudeEnv);
-
   return {
     claudeArgs,
     promptPath,
-    env: customEnv,
+    env: {},
   };
 }
 

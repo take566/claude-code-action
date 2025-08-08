@@ -117,9 +117,6 @@ export function prepareContext(
   const triggerPhrase = context.inputs.triggerPhrase || "@claude";
   const assigneeTrigger = context.inputs.assigneeTrigger;
   const labelTrigger = context.inputs.labelTrigger;
-  const customInstructions = context.inputs.customInstructions;
-  const allowedTools = context.inputs.allowedTools;
-  const disallowedTools = context.inputs.disallowedTools;
   const prompt = context.inputs.prompt;
   const isPR = context.isPR;
 
@@ -153,11 +150,6 @@ export function prepareContext(
     claudeCommentId,
     triggerPhrase,
     ...(triggerUsername && { triggerUsername }),
-    ...(customInstructions && { customInstructions }),
-    ...(allowedTools.length > 0 && { allowedTools: allowedTools.join(",") }),
-    ...(disallowedTools.length > 0 && {
-      disallowedTools: disallowedTools.join(","),
-    }),
     ...(prompt && { prompt }),
     ...(claudeBranch && { claudeBranch }),
   };
@@ -730,10 +722,6 @@ e. Propose a high-level plan of action, including any repo setup steps and linti
 f. If you are unable to complete certain steps, such as running a linter or test suite, particularly due to missing permissions, explain this in your comment so that the user can update your \`--allowedTools\`.
 `;
 
-  if (context.customInstructions) {
-    promptContent += `\n\nCUSTOM INSTRUCTIONS:\n${context.customInstructions}`;
-  }
-
   return promptContent;
 }
 
@@ -786,32 +774,20 @@ export async function createPrompt(
     );
 
     // Set allowed tools
-    const hasActionsReadPermission =
-      context.inputs.additionalPermissions.get("actions") === "read" &&
-      context.isPR;
+    const hasActionsReadPermission = false;
 
     // Get mode-specific tools
     const modeAllowedTools = mode.getAllowedTools();
     const modeDisallowedTools = mode.getDisallowedTools();
 
-    // Combine with existing allowed tools
-    const combinedAllowedTools = [
-      ...context.inputs.allowedTools,
-      ...modeAllowedTools,
-    ];
-    const combinedDisallowedTools = [
-      ...context.inputs.disallowedTools,
-      ...modeDisallowedTools,
-    ];
-
     const allAllowedTools = buildAllowedToolsString(
-      combinedAllowedTools,
+      modeAllowedTools,
       hasActionsReadPermission,
       context.inputs.useCommitSigning,
     );
     const allDisallowedTools = buildDisallowedToolsString(
-      combinedDisallowedTools,
-      combinedAllowedTools,
+      modeDisallowedTools,
+      modeAllowedTools,
     );
 
     core.exportVariable("ALLOWED_TOOLS", allAllowedTools);

@@ -28,12 +28,8 @@ describe("prepareMcpConfig", () => {
       triggerPhrase: "@claude",
       assigneeTrigger: "",
       labelTrigger: "",
-      allowedTools: [],
-      disallowedTools: [],
-      customInstructions: "",
       branchPrefix: "",
       useStickyComment: false,
-      additionalPermissions: new Map(),
       useCommitSigning: false,
     },
   };
@@ -552,7 +548,6 @@ describe("prepareMcpConfig", () => {
       ...mockPRContext,
       inputs: {
         ...mockPRContext.inputs,
-        additionalPermissions: new Map([["actions", "read"]]),
         useCommitSigning: true,
       },
     };
@@ -621,10 +616,6 @@ describe("prepareMcpConfig", () => {
       ...mockPRContext,
       inputs: {
         ...mockPRContext.inputs,
-        additionalPermissions: new Map([
-          ["actions", "read"],
-          ["future", "permission"],
-        ]),
       },
     };
 
@@ -653,7 +644,6 @@ describe("prepareMcpConfig", () => {
       ...mockPRContext,
       inputs: {
         ...mockPRContext.inputs,
-        additionalPermissions: new Map([["actions", "read"]]),
       },
     };
 

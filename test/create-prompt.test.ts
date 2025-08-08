@@ -330,12 +330,11 @@ describe("generatePrompt", () => {
     expect(prompt).toContain("pull request opened");
   });
 
-  test("should include custom instructions when provided", async () => {
+  test("should generate prompt for issue comment without custom fields", async () => {
     const envVars: PreparedContext = {
       repository: "owner/repo",
       claudeCommentId: "12345",
       triggerPhrase: "@claude",
-      customInstructions: "Always use TypeScript",
       eventData: {
         eventName: "issue_comment",
         commentId: "67890",
@@ -354,7 +353,9 @@ describe("generatePrompt", () => {
       mockTagMode,
     );
 
-    expect(prompt).toContain("CUSTOM INSTRUCTIONS:\nAlways use TypeScript");
+    // Verify prompt generates successfully without custom instructions
+    expect(prompt).toContain("@claude please fix this");
+    expect(prompt).not.toContain("CUSTOM INSTRUCTIONS");
   });
 
   test("should use override_prompt when provided", async () => {

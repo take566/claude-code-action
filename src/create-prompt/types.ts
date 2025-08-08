@@ -3,10 +3,8 @@ export type CommonFields = {
   claudeCommentId: string;
   triggerPhrase: string;
   triggerUsername?: string;
-  customInstructions?: string;
-  allowedTools?: string;
-  disallowedTools?: string;
   prompt?: string;
+  claudeBranch?: string;
 };
 
 type PullRequestReviewCommentEvent = {

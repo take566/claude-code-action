@@ -58,21 +58,8 @@ export const agentMode: Mode = {
       promptContent,
     );
 
-    // Agent mode: User has full control via claudeArgs or legacy inputs
+    // Agent mode: User has full control via claudeArgs
     // No default tools are enforced - Claude Code's defaults will apply
-    // Export user-specified tools only if provided
-    if (context.inputs.allowedTools.length > 0) {
-      core.exportVariable(
-        "INPUT_ALLOWED_TOOLS",
-        context.inputs.allowedTools.join(","),
-      );
-    }
-    if (context.inputs.disallowedTools.length > 0) {
-      core.exportVariable(
-        "INPUT_DISALLOWED_TOOLS",
-        context.inputs.disallowedTools.join(","),
-      );
-    }
 
     // Agent mode uses a minimal MCP configuration
     // We don't need comment servers or PR-specific tools for automation

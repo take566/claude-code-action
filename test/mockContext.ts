@@ -15,16 +15,8 @@ const defaultInputs = {
   triggerPhrase: "/claude",
   assigneeTrigger: "",
   labelTrigger: "",
-  anthropicModel: "claude-3-7-sonnet-20250219",
-  allowedTools: [] as string[],
-  disallowedTools: [] as string[],
-  customInstructions: "",
-  useBedrock: false,
-  useVertex: false,
-  timeoutMinutes: 30,
   branchPrefix: "claude/",
   useStickyComment: false,
-  additionalPermissions: new Map<string, string>(),
   useCommitSigning: false,
 };
 

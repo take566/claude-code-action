@@ -270,33 +270,23 @@ describe("parseEnvVarsWithContext", () => {
     });
   });
 
-  describe("optional fields", () => {
-    test("should include custom instructions when provided", () => {
+  describe("context generation", () => {
+    test("should generate context without legacy fields", () => {
       process.env = BASE_ENV;
-      const contextWithCustomInstructions = createMockContext({
+      const context = createMockContext({
         ...mockPullRequestCommentContext,
         inputs: {
           ...mockPullRequestCommentContext.inputs,
-          customInstructions: "Be concise",
         },
       });
-      const result = prepareContext(contextWithCustomInstructions, "12345");
+      const result = prepareContext(context, "12345");
 
-      expect(result.customInstructions).toBe("Be concise");
-    });
-
-    test("should include allowed tools when provided", () => {
-      process.env = BASE_ENV;
-      const contextWithAllowedTools = createMockContext({
-        ...mockPullRequestCommentContext,
-        inputs: {
-          ...mockPullRequestCommentContext.inputs,
-          allowedTools: ["Tool1", "Tool2"],
-        },
-      });
-      const result = prepareContext(contextWithAllowedTools, "12345");
-
-      expect(result.allowedTools).toBe("Tool1,Tool2");
+      // Verify context is created without legacy fields
+      expect(result.repository).toBe("test-owner/test-repo");
+      expect(result.claudeCommentId).toBe("12345");
+      expect(result.triggerPhrase).toBe("/claude");
+      expect((result as any).customInstructions).toBeUndefined();
+      expect((result as any).allowedTools).toBeUndefined();
     });
   });
 });

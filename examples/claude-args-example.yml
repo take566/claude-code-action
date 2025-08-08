@@ -22,7 +22,8 @@ jobs:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
 
           # New claudeArgs input allows direct CLI argument control
-          # Arguments are passed in the order: -p [claudeArgs] [legacy options] [BASE_ARGS]
+          # Order: -p [claudeArgs] [legacy options] [BASE_ARGS]
+          # Note: BASE_ARGS (--verbose --output-format stream-json) cannot be overridden
           claude_args: |
             --max-turns 15
             --model claude-3-opus-20240229
