@@ -65,6 +65,10 @@ inputs:
     description: "Additional arguments to pass directly to Claude CLI"
     required: false
     default: ""
+  additional_permissions:
+    description: "Additional GitHub permissions to request (e.g., 'actions: read')"
+    required: false
+    default: ""
   use_sticky_comment:
     description: "Use just one comment to deliver issue/PR comments"
     required: false
@@ -119,6 +123,7 @@ runs:
         USE_STICKY_COMMENT: ${{ inputs.use_sticky_comment }}
         DEFAULT_WORKFLOW_TOKEN: ${{ github.token }}
         USE_COMMIT_SIGNING: ${{ inputs.use_commit_signing }}
+        ADDITIONAL_PERMISSIONS: ${{ inputs.additional_permissions }}
 
     - name: Install Base Action Dependencies
       if: steps.prepare.outputs.contains_trigger == 'true'

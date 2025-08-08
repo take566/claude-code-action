@@ -1,23 +1,22 @@
 import * as core from "@actions/core";
 import { mkdir, writeFile } from "fs/promises";
 import type { Mode, ModeOptions, ModeResult } from "../types";
-import { isAutomationContext } from "../../github/context";
 import type { PreparedContext } from "../../create-prompt/types";
 
 /**
  * Agent mode implementation.
  *
- * This mode is specifically designed for automation events (workflow_dispatch and schedule).
- * It bypasses the standard trigger checking and comment tracking used by tag mode,
- * making it ideal for scheduled tasks and manual workflow runs.
+ * This mode runs whenever an explicit prompt is provided in the workflow configuration.
+ * It bypasses the standard @claude mention checking and comment tracking used by tag mode,
+ * providing direct access to Claude Code for automation workflows.
  */
 export const agentMode: Mode = {
   name: "agent",
-  description: "Automation mode for workflow_dispatch and schedule events",
+  description: "Direct automation mode for explicit prompts",
 
   shouldTrigger(context) {
-    // Only trigger for automation events
-    return isAutomationContext(context);
+    // Only trigger when an explicit prompt is provided
+    return !!context.inputs?.prompt;
   },
 
   prepareContext(context) {
@@ -41,7 +40,7 @@ export const agentMode: Mode = {
   },
 
   async prepare({ context }: ModeOptions): Promise<ModeResult> {
-    // Agent mode handles automation events (workflow_dispatch, schedule) only
+    // Agent mode handles automation events and any event with explicit prompts
 
     // TODO: handle by createPrompt (similar to tag and review modes)
     // Create prompt directory

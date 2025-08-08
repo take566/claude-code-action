@@ -26,7 +26,7 @@ export type ModeData = {
  *
  * Current modes include:
  * - 'tag': Interactive mode triggered by @claude mentions
- * - 'agent': General automation mode for all events (default)
+ * - 'agent': Direct automation mode triggered by explicit prompts
  */
 export type Mode = {
   name: ModeName;
