@@ -79,7 +79,9 @@ export const agentMode: Mode = {
       }
     }
 
-    core.setOutput("mcp_config", JSON.stringify(mcpConfig));
+    // Agent mode: pass through user's claude_args without modification
+    const userClaudeArgs = process.env.CLAUDE_ARGS || "";
+    core.setOutput("claude_args", userClaudeArgs);
 
     return {
       commentId: undefined,
