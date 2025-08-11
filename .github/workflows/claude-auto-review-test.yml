@@ -1,4 +1,4 @@
-name: Claude Auto Review Test
+name: Claude PR Review (Fixed)
 
 on:
   pull_request:
@@ -44,6 +44,6 @@ jobs:
             Use inline comments to highlight specific areas of concern.
 
             After your review, submit a proper GitHub review with your findings.
-          # GitHub comment server is now automatically included in agent mode
-          # Include Bash for Claude to run git commands if needed
-          claude_args: "--allowedTools Bash,mcp__github-comment-server__create_pending_pull_request_review,mcp__github-comment-server__add_comment_to_pending_review,mcp__github-comment-server__submit_pending_pull_request_review,mcp__github-comment-server__get_pull_request_diff,mcp__github-comment-server__get_pull_request_files,mcp__github-comment-server__get_pull_request,mcp__github-comment-server__list_pull_request_reviews,mcp__github-comment-server__list_pull_request_review_comments"
+          # Only include essential tools for reviewing (no submitting)
+          # This prevents multiple review submissions
+          claude_args: "--allowedTools Bash,Read,Grep,mcp__github-comment-server__get_pull_request_diff,mcp__github-comment-server__get_pull_request_files,mcp__github-comment-server__get_pull_request"
