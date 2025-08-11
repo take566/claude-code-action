@@ -114,11 +114,11 @@ describe("Agent Mode", () => {
       githubToken: "test-token",
     });
 
-    // Verify claude_args is passed through
-    expect(setOutputSpy).toHaveBeenCalledWith(
-      "claude_args",
-      "--model claude-sonnet-4 --max-turns 10",
-    );
+    // Verify claude_args includes MCP config and user args
+    const callArgs = setOutputSpy.mock.calls[0];
+    expect(callArgs[0]).toBe("claude_args");
+    expect(callArgs[1]).toContain("--mcp-config");
+    expect(callArgs[1]).toContain("--model claude-sonnet-4 --max-turns 10");
 
     // Verify return structure
     expect(result).toEqual({
@@ -151,6 +151,9 @@ describe("Agent Mode", () => {
 
     // Note: We can't easily test file creation in this unit test,
     // but we can verify the method completes without errors
-    expect(setOutputSpy).toHaveBeenCalledWith("claude_args", "");
+    // Agent mode now includes MCP config even with empty user args
+    const callArgs = setOutputSpy.mock.calls[0];
+    expect(callArgs[0]).toBe("claude_args");
+    expect(callArgs[1]).toContain("--mcp-config");
   });
 });
