@@ -39,7 +39,7 @@ export const agentMode: Mode = {
     return false;
   },
 
-  async prepare({ context }: ModeOptions): Promise<ModeResult> {
+  async prepare({ context, githubToken }: ModeOptions): Promise<ModeResult> {
     // Agent mode handles automation events and any event with explicit prompts
 
     // TODO: handle by createPrompt (similar to tag and review modes)
@@ -72,7 +72,7 @@ export const agentMode: Mode = {
             `${process.env.GITHUB_ACTION_PATH}/src/mcp/github-comment-server.ts`,
           ],
           env: {
-            GITHUB_TOKEN: process.env.GITHUB_TOKEN || "",
+            GITHUB_TOKEN: githubToken || "",
             REPO_OWNER: context.repository.owner,
             REPO_NAME: context.repository.repo,
             GITHUB_EVENT_NAME: process.env.GITHUB_EVENT_NAME || "",
