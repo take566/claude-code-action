@@ -41,6 +41,8 @@ export const agentMode: Mode = {
 
   async prepare({ context, githubToken }: ModeOptions): Promise<ModeResult> {
     // Agent mode handles automation events and any event with explicit prompts
+    
+    console.log(`Agent mode: githubToken provided: ${!!githubToken}, length: ${githubToken?.length || 0}`);
 
     // TODO: handle by createPrompt (similar to tag and review modes)
     // Create prompt directory
