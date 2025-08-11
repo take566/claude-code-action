@@ -95,36 +95,30 @@ describe("Agent Mode", () => {
     });
   });
 
-  test("prepare method sets up tools environment variables correctly", async () => {
+  test("prepare method passes through claude_args", async () => {
     // Clear any previous calls before this test
     exportVariableSpy.mockClear();
     setOutputSpy.mockClear();
 
-    const contextWithCustomTools = createMockAutomationContext({
+    const contextWithCustomArgs = createMockAutomationContext({
       eventName: "workflow_dispatch",
     });
-    contextWithCustomTools.inputs.allowedTools = ["CustomTool1", "CustomTool2"];
-    contextWithCustomTools.inputs.disallowedTools = ["BadTool"];
+
+    // Set CLAUDE_ARGS environment variable
+    process.env.CLAUDE_ARGS = "--model claude-sonnet-4 --max-turns 10";
 
     const mockOctokit = {} as any;
     const result = await agentMode.prepare({
-      context: contextWithCustomTools,
+      context: contextWithCustomArgs,
       octokit: mockOctokit,
       githubToken: "test-token",
     });
 
-    // Verify that both ALLOWED_TOOLS and DISALLOWED_TOOLS are set
-    expect(exportVariableSpy).toHaveBeenCalledWith(
-      "ALLOWED_TOOLS",
-      "Edit,MultiEdit,Glob,Grep,LS,Read,Write,CustomTool1,CustomTool2",
+    // Verify claude_args is passed through
+    expect(setOutputSpy).toHaveBeenCalledWith(
+      "claude_args",
+      "--model claude-sonnet-4 --max-turns 10",
     );
-    expect(exportVariableSpy).toHaveBeenCalledWith(
-      "DISALLOWED_TOOLS",
-      "WebSearch,WebFetch,BadTool",
-    );
-
-    // Verify MCP config is set
-    expect(setOutputSpy).toHaveBeenCalledWith("mcp_config", expect.any(String));
 
     // Verify return structure
     expect(result).toEqual({
@@ -136,15 +130,17 @@ describe("Agent Mode", () => {
       },
       mcpConfig: expect.any(String),
     });
+
+    // Clean up
+    delete process.env.CLAUDE_ARGS;
   });
 
   test("prepare method creates prompt file with correct content", async () => {
     const contextWithPrompts = createMockAutomationContext({
       eventName: "workflow_dispatch",
     });
-    contextWithPrompts.inputs.overridePrompt = "Custom override prompt";
-    contextWithPrompts.inputs.directPrompt =
-      "Direct prompt (should be ignored)";
+    // In v1-dev, we only have the unified prompt field
+    contextWithPrompts.inputs.prompt = "Custom prompt content";
 
     const mockOctokit = {} as any;
     await agentMode.prepare({
@@ -155,6 +151,6 @@ describe("Agent Mode", () => {
 
     // Note: We can't easily test file creation in this unit test,
     // but we can verify the method completes without errors
-    expect(setOutputSpy).toHaveBeenCalledWith("mcp_config", expect.any(String));
+    expect(setOutputSpy).toHaveBeenCalledWith("claude_args", "");
   });
 });
