@@ -2,16 +2,6 @@ import * as core from "@actions/core";
 import { mkdir, writeFile } from "fs/promises";
 import type { Mode, ModeOptions, ModeResult } from "../types";
 import type { PreparedContext } from "../../create-prompt/types";
-import { GITHUB_API_URL, GITHUB_SERVER_URL } from "../../github/api/config";
-import { fetchGitHubData } from "../../github/data/fetcher";
-import { 
-  formatContext, 
-  formatBody, 
-  formatComments,
-  formatReviewComments,
-  formatChangedFilesWithSHA 
-} from "../../github/data/formatter";
-import { isEntityContext } from "../../github/context";
 
 /**
  * Agent mode implementation.
@@ -50,69 +40,20 @@ export const agentMode: Mode = {
   },
 
   async prepare({ context, githubToken, octokit }: ModeOptions): Promise<ModeResult> {
-    // Agent mode handles automation events and any event with explicit prompts
-
     // Create prompt directory
     await mkdir(`${process.env.RUNNER_TEMP}/claude-prompts`, {
       recursive: true,
     });
     
-    // Fetch GitHub context data if we're in an entity context (PR/issue)
-    let githubContextPrefix = '';
-    if (isEntityContext(context)) {
-      try {
-        const githubData = await fetchGitHubData({
-          octokits: octokit,
-          repository: `${context.repository.owner}/${context.repository.repo}`,
-          prNumber: context.entityNumber.toString(),
-          isPR: context.isPR,
-          triggerUsername: context.actor,
-        });
-        
-        // Format the GitHub data into a readable context
-        const formattedContext = formatContext(githubData.contextData, context.isPR);
-        const formattedBody = githubData.contextData?.body 
-          ? formatBody(githubData.contextData.body, githubData.imageUrlMap)
-          : "No description provided";
-        const formattedComments = formatComments(githubData.comments, githubData.imageUrlMap);
-        
-        // Build the context prefix
-        githubContextPrefix = `## GitHub Context
-
-${formattedContext}
-
-### Description
-${formattedBody}`;
-        
-        if (formattedComments && formattedComments.trim()) {
-          githubContextPrefix += `\n\n### Comments\n${formattedComments}`;
-        }
-        
-        if (context.isPR && githubData.changedFilesWithSHA) {
-          const formattedFiles = formatChangedFilesWithSHA(githubData.changedFilesWithSHA);
-          githubContextPrefix += `\n\n### Changed Files\n${formattedFiles}`;
-        }
-        
-        githubContextPrefix += '\n\n## Your Task\n\n';
-      } catch (error) {
-        console.warn('Failed to fetch GitHub context:', error);
-        // Continue without GitHub context if fetching fails
-      }
-    }
-    
-    // Write the prompt file with GitHub context prefix
-    const userPrompt = context.inputs.prompt || 
+    // Write the prompt file - use the user's prompt directly
+    const promptContent = context.inputs.prompt || 
       `Repository: ${context.repository.owner}/${context.repository.repo}`;
-    const promptContent = githubContextPrefix + userPrompt;
     
     await writeFile(
       `${process.env.RUNNER_TEMP}/claude-prompts/claude-prompt.txt`,
       promptContent,
     );
 
-    // Agent mode: User has full control via claudeArgs
-    // No default tools are enforced - Claude Code's defaults will apply
-    // No default MCP servers - users must configure what they need
     const mcpConfig: any = {
       mcpServers: {},
     };
