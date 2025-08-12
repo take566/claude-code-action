@@ -33,5 +33,11 @@ jobs:
             - Overall architecture and design decisions
             - Documentation consistency
             
-            Use the GitHub MCP tools to create a proper PR review with comments.
+            Steps:
+            1. Use mcp__github__get_pull_request to get PR details
+            2. Use mcp__github__get_pull_request_diff to see the changes
+            3. Use mcp__github__create_pending_pull_request_review to start a review
+            4. Use mcp__github__add_comment_to_pending_review for specific feedback
+            5. Use mcp__github__submit_pending_pull_request_review with event: COMMENT to submit
+            
             Create a review with constructive feedback and submit it as a COMMENT (not APPROVE).
