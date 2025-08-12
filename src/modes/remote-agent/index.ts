@@ -283,10 +283,15 @@ export const remoteAgentMode: Mode = {
     // Generate dispatch-specific prompt (just the task description)
     const promptContent = generateDispatchPrompt(taskDescription);
 
+    console.log("Writing prompt file...");
+    console.log("Contents: ", promptContent);
     // Write the prompt file
     await writeFile(
       `${process.env.RUNNER_TEMP}/claude-prompts/claude-prompt.txt`,
       promptContent,
+    );
+    console.log(
+      `Prompt file written successfully to ${process.env.RUNNER_TEMP}/claude-prompts/claude-prompt.txt`,
     );
 
     // Set stream configuration for repository_dispatch events
