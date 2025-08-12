@@ -4,7 +4,13 @@ import type { Mode, ModeOptions, ModeResult } from "../types";
 import type { PreparedContext } from "../../create-prompt/types";
 import { GITHUB_API_URL, GITHUB_SERVER_URL } from "../../github/api/config";
 import { fetchGitHubData } from "../../github/data/fetcher";
-import { formatGitHubData } from "../../github/data/formatter";
+import { 
+  formatContext, 
+  formatBody, 
+  formatComments,
+  formatReviewComments,
+  formatChangedFilesWithSHA 
+} from "../../github/data/formatter";
 import { isEntityContext } from "../../github/context";
 
 /**
@@ -66,8 +72,30 @@ export const agentMode: Mode = {
         });
         
         // Format the GitHub data into a readable context
-        const formattedContext = formatGitHubData(githubData);
-        githubContextPrefix = `## GitHub Context\n\n${formattedContext}\n\n## Your Task\n\n`;
+        const formattedContext = formatContext(githubData.contextData, context.isPR);
+        const formattedBody = githubData.contextData?.body 
+          ? formatBody(githubData.contextData.body, githubData.imageUrlMap)
+          : "No description provided";
+        const formattedComments = formatComments(githubData.comments, githubData.imageUrlMap);
+        
+        // Build the context prefix
+        githubContextPrefix = `## GitHub Context
+
+${formattedContext}
+
+### Description
+${formattedBody}`;
+        
+        if (formattedComments && formattedComments.trim()) {
+          githubContextPrefix += `\n\n### Comments\n${formattedComments}`;
+        }
+        
+        if (context.isPR && githubData.changedFilesWithSHA) {
+          const formattedFiles = formatChangedFilesWithSHA(githubData.changedFilesWithSHA);
+          githubContextPrefix += `\n\n### Changed Files\n${formattedFiles}`;
+        }
+        
+        githubContextPrefix += '\n\n## Your Task\n\n';
       } catch (error) {
         console.warn('Failed to fetch GitHub context:', error);
         // Continue without GitHub context if fetching fails
