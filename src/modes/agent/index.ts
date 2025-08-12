@@ -78,6 +78,8 @@ export const agentMode: Mode = {
             REPO_OWNER: context.repository.owner,
             REPO_NAME: context.repository.repo,
             CLAUDE_COMMENT_ID: process.env.CLAUDE_COMMENT_ID || "",
+            PR_NUMBER: (context as any).entityNumber?.toString() || process.env.GITHUB_EVENT_PULL_REQUEST_NUMBER || "",
+            ISSUE_NUMBER: (context as any).entityNumber?.toString() || "",
             GITHUB_EVENT_NAME: process.env.GITHUB_EVENT_NAME || "",
             GITHUB_API_URL:
               process.env.GITHUB_API_URL || "https://api.github.com",
