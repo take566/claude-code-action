@@ -37,4 +37,4 @@ jobs:
             You have access to mcp__github__ tools for creating and submitting reviews.
             
             Create a review with constructive feedback and submit it as a COMMENT (not APPROVE).
-          claude_args: "--allowedTools mcp__github__*,Read,Grep,Glob"
+          claude_args: '--allowedTools "mcp__github__*,Read,Grep,Glob"'
