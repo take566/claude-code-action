@@ -22,13 +22,19 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           prompt: |
-            Please review this PR. Look at the changes and provide thoughtful feedback on:
+            Please review this PR using the GitHub review tools. You MUST:
+            1. First, use mcp__github-comment-server__get_pull_request_diff to get the PR changes
+            2. Then, use mcp__github-comment-server__create_pending_pull_request_review to start a review
+            3. Use mcp__github-comment-server__add_comment_to_pending_review to add inline comments where needed
+            4. Finally, use mcp__github-comment-server__submit_pending_pull_request_review with event="COMMENT" to submit the review
+            
+            In your review, provide thoughtful feedback on:
             - Code quality and best practices
             - Potential bugs or issues
             - Suggestions for improvements
             - Overall architecture and design decisions
-            - Documentation consistency: Verify that README.md and other documentation files are updated to reflect any code changes (especially new inputs, features, or configuration options)
+            - Documentation consistency
 
-            Be constructive and specific in your feedback. Give inline comments where applicable.
+            IMPORTANT: You must submit the review as a COMMENT, not APPROVE or REQUEST_CHANGES.
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           claude_args: "--allowedTools mcp__github-comment-server__create_pending_pull_request_review,mcp__github-comment-server__add_comment_to_pending_review,mcp__github-comment-server__submit_pending_pull_request_review,mcp__github-comment-server__get_pull_request_diff"
