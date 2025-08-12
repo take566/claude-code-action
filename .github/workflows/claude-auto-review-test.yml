@@ -20,6 +20,7 @@ jobs:
       - name: Auto review PR
         uses: ./
         with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
           prompt: |
             Please review this PR. Look at the changes and provide thoughtful feedback on:
             - Code quality and best practices
