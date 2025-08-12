@@ -20,11 +20,11 @@ jobs:
           fetch-depth: 0
           
       - name: Auto review PR
-        uses: km-anthropic/claude-code-action@v1-dev
+        uses: anthropics/claude-code-action@v1-dev
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           prompt: |
-            Please review pull request #${{ github.event.pull_request.number }} in the ${{ github.repository }} repository.
+            Please review this pull request and provide comprehensive feedback.
             
             Focus on:
             - Code quality and best practices
@@ -34,7 +34,4 @@ jobs:
             - Documentation consistency
             
             Use the GitHub MCP tools to create a proper PR review with comments.
-            Important: When using the GitHub MCP tools, make sure to use PR number ${{ github.event.pull_request.number }}.
-            
             Create a review with constructive feedback and submit it as a COMMENT (not APPROVE).
-          claude_args: '--allowedTools "mcp__github__get_pull_request,mcp__github__get_pull_request_diff,mcp__github__get_pull_request_files,mcp__github__create_pending_pull_request_review,mcp__github__add_comment_to_pending_review,mcp__github__submit_pending_pull_request_review,Read,Grep,Glob"'
