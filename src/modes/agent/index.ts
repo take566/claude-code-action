@@ -2,6 +2,10 @@ import * as core from "@actions/core";
 import { mkdir, writeFile } from "fs/promises";
 import type { Mode, ModeOptions, ModeResult } from "../types";
 import type { PreparedContext } from "../../create-prompt/types";
+import { GITHUB_API_URL, GITHUB_SERVER_URL } from "../../github/api/config";
+import { fetchGitHubData } from "../../github/data/fetcher";
+import { formatGitHubData } from "../../github/data/formatter";
+import { isEntityContext } from "../../github/context";
 
 /**
  * Agent mode implementation.
@@ -39,21 +43,42 @@ export const agentMode: Mode = {
     return false;
   },
 
-  async prepare({ context, githubToken }: ModeOptions): Promise<ModeResult> {
+  async prepare({ context, githubToken, octokit }: ModeOptions): Promise<ModeResult> {
     // Agent mode handles automation events and any event with explicit prompts
     
     console.log(`Agent mode: githubToken provided: ${!!githubToken}, length: ${githubToken?.length || 0}`);
 
-    // TODO: handle by createPrompt (similar to tag and review modes)
     // Create prompt directory
     await mkdir(`${process.env.RUNNER_TEMP}/claude-prompts`, {
       recursive: true,
     });
-    // Write the prompt file - the base action requires a prompt_file parameter.
-    // Use the unified prompt field from v1.0.
-    const promptContent =
-      context.inputs.prompt ||
+    
+    // Fetch GitHub context data if we're in an entity context (PR/issue)
+    let githubContextPrefix = '';
+    if (isEntityContext(context)) {
+      try {
+        const githubData = await fetchGitHubData({
+          octokits: octokit,
+          repository: `${context.repository.owner}/${context.repository.repo}`,
+          prNumber: context.entityNumber.toString(),
+          isPR: context.isPR,
+          triggerUsername: context.actor,
+        });
+        
+        // Format the GitHub data into a readable context
+        const formattedContext = formatGitHubData(githubData);
+        githubContextPrefix = `## GitHub Context\n\n${formattedContext}\n\n## Your Task\n\n`;
+      } catch (error) {
+        console.warn('Failed to fetch GitHub context:', error);
+        // Continue without GitHub context if fetching fails
+      }
+    }
+    
+    // Write the prompt file with GitHub context prefix
+    const userPrompt = context.inputs.prompt || 
       `Repository: ${context.repository.owner}/${context.repository.repo}`;
+    const promptContent = githubContextPrefix + userPrompt;
+    
     await writeFile(
       `${process.env.RUNNER_TEMP}/claude-prompts/claude-prompt.txt`,
       promptContent,
@@ -62,11 +87,11 @@ export const agentMode: Mode = {
     // Agent mode: User has full control via claudeArgs
     // No default tools are enforced - Claude Code's defaults will apply
 
-    // Always include the GitHub comment server in agent mode
-    // This ensures GitHub tools (PR reviews, comments, etc.) work out of the box
-    // without requiring users to manually configure the MCP server
+    // Include both GitHub comment server and main GitHub MCP server by default
+    // This ensures comprehensive GitHub tools work out of the box
     const mcpConfig: any = {
       mcpServers: {
+        // GitHub comment server for updating Claude comments
         github_comment: {
           command: "bun",
           args: [
@@ -83,6 +108,24 @@ export const agentMode: Mode = {
             GITHUB_EVENT_NAME: process.env.GITHUB_EVENT_NAME || "",
             GITHUB_API_URL:
               process.env.GITHUB_API_URL || "https://api.github.com",
+          },
+        },
+        // Main GitHub MCP server for comprehensive GitHub operations
+        github: {
+          command: "docker",
+          args: [
+            "run",
+            "-i",
+            "--rm",
+            "-e",
+            "GITHUB_PERSONAL_ACCESS_TOKEN",
+            "-e",
+            "GITHUB_HOST",
+            "ghcr.io/github/github-mcp-server:sha-efef8ae", // https://github.com/github/github-mcp-server/releases/tag/v0.9.0
+          ],
+          env: {
+            GITHUB_PERSONAL_ACCESS_TOKEN: githubToken || "",
+            GITHUB_HOST: GITHUB_SERVER_URL,
           },
         },
       },
