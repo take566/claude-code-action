@@ -112,29 +112,9 @@ ${formattedBody}`;
 
     // Agent mode: User has full control via claudeArgs
     // No default tools are enforced - Claude Code's defaults will apply
-
-    // Include main GitHub MCP server by default for comprehensive GitHub operations
+    // No default MCP servers - users must configure what they need
     const mcpConfig: any = {
-      mcpServers: {
-        // Main GitHub MCP server for comprehensive GitHub operations
-        github: {
-          command: "docker",
-          args: [
-            "run",
-            "-i",
-            "--rm",
-            "-e",
-            "GITHUB_PERSONAL_ACCESS_TOKEN",
-            "-e",
-            "GITHUB_HOST",
-            "ghcr.io/github/github-mcp-server:sha-efef8ae", // https://github.com/github/github-mcp-server/releases/tag/v0.9.0
-          ],
-          env: {
-            GITHUB_PERSONAL_ACCESS_TOKEN: githubToken || "",
-            GITHUB_HOST: GITHUB_SERVER_URL,
-          },
-        },
-      },
+      mcpServers: {},
     };
 
     // Add user-provided additional MCP config if any
