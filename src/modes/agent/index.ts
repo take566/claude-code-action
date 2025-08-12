@@ -67,7 +67,7 @@ export const agentMode: Mode = {
     // without requiring users to manually configure the MCP server
     const mcpConfig: any = {
       mcpServers: {
-        "github-comment-server": {
+        github_comment: {
           command: "bun",
           args: [
             "run",
@@ -77,6 +77,7 @@ export const agentMode: Mode = {
             GITHUB_TOKEN: githubToken || "",
             REPO_OWNER: context.repository.owner,
             REPO_NAME: context.repository.repo,
+            CLAUDE_COMMENT_ID: process.env.CLAUDE_COMMENT_ID || "",
             GITHUB_EVENT_NAME: process.env.GITHUB_EVENT_NAME || "",
             GITHUB_API_URL:
               process.env.GITHUB_API_URL || "https://api.github.com",
@@ -84,6 +85,29 @@ export const agentMode: Mode = {
         },
       },
     };
+    
+    // Include inline comment server for PR contexts
+    if (context.eventName === "pull_request" || context.eventName === "pull_request_review") {
+      // Get PR number from the context payload
+      const prNumber = (context as any).payload?.pull_request?.number || 
+                      (context as any).entityNumber || 
+                      "";
+      
+      mcpConfig.mcpServers.github_inline_comment = {
+        command: "bun",
+        args: [
+          "run",
+          `${process.env.GITHUB_ACTION_PATH}/src/mcp/github-inline-comment-server.ts`,
+        ],
+        env: {
+          GITHUB_TOKEN: githubToken || "",
+          REPO_OWNER: context.repository.owner,
+          REPO_NAME: context.repository.repo,
+          PR_NUMBER: prNumber.toString(),
+          GITHUB_API_URL: process.env.GITHUB_API_URL || "https://api.github.com",
+        },
+      };
+    }
 
     // Add user-provided additional MCP config if any
     const additionalMcpConfig = process.env.MCP_CONFIG || "";
