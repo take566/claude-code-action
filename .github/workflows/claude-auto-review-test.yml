@@ -31,16 +31,8 @@ jobs:
             - Overall architecture and design decisions
             - Documentation consistency
             
-            After completing your review, write it to a file then post it as a PR comment using these commands:
-            
-            1. First save your review to a file:
-            cat > /tmp/pr-review.md << 'EOF'
-            YOUR_REVIEW_CONTENT_HERE
-            EOF
-            
-            2. Then post it:
-            gh pr comment ${{ github.event.pull_request.number }} --repo ${{ github.repository }} --body-file /tmp/pr-review.md
-            
-            Make sure to format your review nicely with markdown headers, bullet points, and code blocks.
+            Use the GitHub MCP tools to create a proper PR review with comments.
+            You can use mcp__github__create_pending_pull_request_review to start a review
+            and mcp__github__submit_pull_request_review to submit it as a COMMENT (not APPROVE).
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          claude_args: "--allowedTools Bash(gh pr comment:*),Read,Grep,Glob"
+          claude_args: "--allowedTools mcp__github__create_pending_pull_request_review,mcp__github__submit_pull_request_review,Read,Grep,Glob"
