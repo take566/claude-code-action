@@ -456,7 +456,7 @@ Instructions:
 2. For implementations: Make the requested changes, commit, and push
 
 Key points:
-- You're already on a new branch - don't create another
+- You're already on a new branch - NEVER create another branch (this is very important). ${claudeBranch} is the ONLY branch you should work on.
 ${commitInstructions}
 ${
   claudeBranch
