@@ -31,9 +31,16 @@ jobs:
             - Overall architecture and design decisions
             - Documentation consistency
             
-            After completing your review, post it as a comment on the PR using this command:
-            gh pr comment ${{ github.event.pull_request.number }} --body "YOUR_REVIEW_HERE"
+            After completing your review, write it to a file then post it as a PR comment using these commands:
             
-            Format your review nicely with markdown, using headers, bullet points, and code blocks as needed.
+            1. First save your review to a file:
+            cat > /tmp/pr-review.md << 'EOF'
+            YOUR_REVIEW_CONTENT_HERE
+            EOF
+            
+            2. Then post it:
+            gh pr comment ${{ github.event.pull_request.number }} --repo ${{ github.repository }} --body-file /tmp/pr-review.md
+            
+            Make sure to format your review nicely with markdown headers, bullet points, and code blocks.
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           claude_args: "--allowedTools Bash(gh pr comment:*),Read,Grep,Glob"
