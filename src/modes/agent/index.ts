@@ -113,29 +113,9 @@ ${formattedBody}`;
     // Agent mode: User has full control via claudeArgs
     // No default tools are enforced - Claude Code's defaults will apply
 
-    // Include both GitHub comment server and main GitHub MCP server by default
-    // This ensures comprehensive GitHub tools work out of the box
+    // Include main GitHub MCP server by default for comprehensive GitHub operations
     const mcpConfig: any = {
       mcpServers: {
-        // GitHub comment server for updating Claude comments
-        github_comment: {
-          command: "bun",
-          args: [
-            "run",
-            `${process.env.GITHUB_ACTION_PATH}/src/mcp/github-comment-server.ts`,
-          ],
-          env: {
-            GITHUB_TOKEN: githubToken || "",
-            REPO_OWNER: context.repository.owner,
-            REPO_NAME: context.repository.repo,
-            CLAUDE_COMMENT_ID: process.env.CLAUDE_COMMENT_ID || "",
-            PR_NUMBER: (context as any).entityNumber?.toString() || process.env.GITHUB_EVENT_PULL_REQUEST_NUMBER || "",
-            ISSUE_NUMBER: (context as any).entityNumber?.toString() || "",
-            GITHUB_EVENT_NAME: process.env.GITHUB_EVENT_NAME || "",
-            GITHUB_API_URL:
-              process.env.GITHUB_API_URL || "https://api.github.com",
-          },
-        },
         // Main GitHub MCP server for comprehensive GitHub operations
         github: {
           command: "docker",
@@ -156,29 +136,6 @@ ${formattedBody}`;
         },
       },
     };
-    
-    // Include inline comment server for PR contexts
-    if (context.eventName === "pull_request" || context.eventName === "pull_request_review") {
-      // Get PR number from the context payload
-      const prNumber = (context as any).payload?.pull_request?.number || 
-                      (context as any).entityNumber || 
-                      "";
-      
-      mcpConfig.mcpServers.github_inline_comment = {
-        command: "bun",
-        args: [
-          "run",
-          `${process.env.GITHUB_ACTION_PATH}/src/mcp/github-inline-comment-server.ts`,
-        ],
-        env: {
-          GITHUB_TOKEN: githubToken || "",
-          REPO_OWNER: context.repository.owner,
-          REPO_NAME: context.repository.repo,
-          PR_NUMBER: prNumber.toString(),
-          GITHUB_API_URL: process.env.GITHUB_API_URL || "https://api.github.com",
-        },
-      };
-    }
 
     // Add user-provided additional MCP config if any
     const additionalMcpConfig = process.env.MCP_CONFIG || "";
