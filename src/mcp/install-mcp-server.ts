@@ -1,6 +1,7 @@
 import * as core from "@actions/core";
 import { GITHUB_API_URL, GITHUB_SERVER_URL } from "../github/api/config";
-import type { ParsedGitHubContext } from "../github/context";
+import type { GitHubContext } from "../github/context";
+import { isEntityContext } from "../github/context";
 import { Octokit } from "@octokit/rest";
 
 type PrepareConfigParams = {
@@ -12,7 +13,7 @@ type PrepareConfigParams = {
   additionalMcpConfig?: string;
   claudeCommentId?: string;
   allowedTools: string[];
-  context: ParsedGitHubContext;
+  context: GitHubContext;
 };
 
 async function checkActionsReadPermission(
@@ -67,6 +68,10 @@ export async function prepareMcpConfig(
     const hasGitHubMcpTools = allowedToolsList.some((tool) =>
       tool.startsWith("mcp__github__"),
     );
+    
+    const hasInlineCommentTools = allowedToolsList.some((tool) =>
+      tool.startsWith("mcp__github_inline_comment__"),
+    );
 
     const baseMcpConfig: { mcpServers: Record<string, unknown> } = {
       mcpServers: {},
@@ -110,11 +115,29 @@ export async function prepareMcpConfig(
         },
       };
     }
+    
+    // Include inline comment server for PRs when requested via allowed tools
+    if (isEntityContext(context) && context.isPR && (hasGitHubMcpTools || hasInlineCommentTools)) {
+      baseMcpConfig.mcpServers.github_inline_comment = {
+        command: "bun",
+        args: [
+          "run",
+          `${process.env.GITHUB_ACTION_PATH}/src/mcp/github-inline-comment-server.ts`,
+        ],
+        env: {
+          GITHUB_TOKEN: githubToken,
+          REPO_OWNER: owner,
+          REPO_NAME: repo,
+          PR_NUMBER: context.entityNumber?.toString() || "",
+          GITHUB_API_URL: GITHUB_API_URL,
+        },
+      };
+    }
 
     // CI server is included when we have a workflow token and context is a PR
     const hasWorkflowToken = !!process.env.DEFAULT_WORKFLOW_TOKEN;
 
-    if (context.isPR && hasWorkflowToken) {
+    if (isEntityContext(context) && context.isPR && hasWorkflowToken) {
       // Verify the token actually has actions:read permission
       const actuallyHasPermission = await checkActionsReadPermission(
         process.env.DEFAULT_WORKFLOW_TOKEN || "",

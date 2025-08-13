@@ -2,6 +2,8 @@ import * as core from "@actions/core";
 import { mkdir, writeFile } from "fs/promises";
 import type { Mode, ModeOptions, ModeResult } from "../types";
 import type { PreparedContext } from "../../create-prompt/types";
+import { prepareMcpConfig } from "../../mcp/install-mcp-server";
+import { parseAllowedTools } from "./parse-tools";
 
 /**
  * Agent mode implementation.
@@ -39,7 +41,7 @@ export const agentMode: Mode = {
     return false;
   },
 
-  async prepare({ context, githubToken, octokit }: ModeOptions): Promise<ModeResult> {
+  async prepare({ context, githubToken }: ModeOptions): Promise<ModeResult> {
     // Create prompt directory
     await mkdir(`${process.env.RUNNER_TEMP}/claude-prompts`, {
       recursive: true,
@@ -54,43 +56,43 @@ export const agentMode: Mode = {
       promptContent,
     );
 
-    const mcpConfig: any = {
-      mcpServers: {},
-    };
-
-    // Add user-provided additional MCP config if any
-    const additionalMcpConfig = process.env.MCP_CONFIG || "";
-    if (additionalMcpConfig.trim()) {
-      try {
-        const additional = JSON.parse(additionalMcpConfig);
-        if (additional && typeof additional === "object") {
-          // Merge mcpServers if both have them
-          if (additional.mcpServers && mcpConfig.mcpServers) {
-            Object.assign(mcpConfig.mcpServers, additional.mcpServers);
-          } else {
-            Object.assign(mcpConfig, additional);
-          }
-        }
-      } catch (error) {
-        core.warning(`Failed to parse additional MCP config: ${error}`);
-      }
-    }
-
-    // Agent mode: pass through user's claude_args with MCP config
+    // Parse allowed tools from user's claude_args
     const userClaudeArgs = process.env.CLAUDE_ARGS || "";
-    const escapedMcpConfig = JSON.stringify(mcpConfig).replace(/'/g, "'\\''");
-    const claudeArgs =
-      `--mcp-config '${escapedMcpConfig}' ${userClaudeArgs}`.trim();
+    const allowedTools = parseAllowedTools(userClaudeArgs);
+    
+    // Detect current branch from GitHub environment
+    const currentBranch = process.env.GITHUB_HEAD_REF || 
+                         process.env.GITHUB_REF_NAME || 
+                         "main";
+    
+    // Get MCP configuration with GitHub servers when requested
+    const additionalMcpConfig = process.env.MCP_CONFIG || "";
+    const mcpConfig = await prepareMcpConfig({
+      githubToken,
+      owner: context.repository.owner,
+      repo: context.repository.repo,
+      branch: currentBranch,
+      baseBranch: context.inputs.baseBranch || "main",
+      additionalMcpConfig,
+      claudeCommentId: undefined, // No tracking comment in agent mode
+      allowedTools,
+      context,
+    });
+
+    // Build final claude_args
+    const escapedMcpConfig = mcpConfig.replace(/'/g, "'\\''");
+    const claudeArgs = `--mcp-config '${escapedMcpConfig}' ${userClaudeArgs}`.trim();
+    
     core.setOutput("claude_args", claudeArgs);
 
     return {
       commentId: undefined,
       branchInfo: {
-        baseBranch: "",
-        currentBranch: "",
+        baseBranch: context.inputs.baseBranch || "main",
+        currentBranch,
         claudeBranch: undefined,
       },
-      mcpConfig: JSON.stringify(mcpConfig),
+      mcpConfig,
     };
   },
 
