@@ -100,15 +100,13 @@ export const tagMode: Mode = {
 
     await createPrompt(tagMode, modeContext, githubData, context);
 
-    // Get MCP configuration
-    const additionalMcpConfig = process.env.MCP_CONFIG || "";
-    const mcpConfig = await prepareMcpConfig({
+    // Get our GitHub MCP servers configuration
+    const ourMcpConfig = await prepareMcpConfig({
       githubToken,
       owner: context.repository.owner,
       repo: context.repository.repo,
       branch: branchInfo.claudeBranch || branchInfo.currentBranch,
       baseBranch: branchInfo.baseBranch,
-      additionalMcpConfig,
       claudeCommentId: commentId.toString(),
       allowedTools: [],
       context,
@@ -150,14 +148,26 @@ export const tagMode: Mode = {
 
     const userClaudeArgs = process.env.CLAUDE_ARGS || "";
 
-    // Build complete claude_args with MCP config (as JSON string), tools, and user args
-    // Note: Once Claude supports multiple --mcp-config flags, we can pass as file path
-    // Escape single quotes in JSON to prevent shell injection
-    const escapedMcpConfig = mcpConfig.replace(/'/g, "'\\''");
-    let claudeArgs = `--mcp-config '${escapedMcpConfig}' `;
-    claudeArgs += `--allowedTools "${tagModeTools.join(",")}" `;
+    // Build complete claude_args with multiple --mcp-config flags
+    let claudeArgs = "";
+
+    // Add our GitHub servers config
+    const escapedOurConfig = ourMcpConfig.replace(/'/g, "'\\''");
+    claudeArgs = `--mcp-config '${escapedOurConfig}'`;
+
+    // Add user's MCP_CONFIG env var as separate --mcp-config
+    const userMcpConfig = process.env.MCP_CONFIG;
+    if (userMcpConfig?.trim()) {
+      const escapedUserConfig = userMcpConfig.replace(/'/g, "'\\''");
+      claudeArgs = `${claudeArgs} --mcp-config '${escapedUserConfig}'`;
+    }
+
+    // Add required tools for tag mode
+    claudeArgs += ` --allowedTools "${tagModeTools.join(",")}"`;
+
+    // Append user's claude_args (which may have more --mcp-config flags)
     if (userClaudeArgs) {
-      claudeArgs += userClaudeArgs;
+      claudeArgs += ` ${userClaudeArgs}`;
     }
 
     core.setOutput("claude_args", claudeArgs.trim());
@@ -165,7 +175,7 @@ export const tagMode: Mode = {
     return {
       commentId,
       branchInfo,
-      mcpConfig,
+      mcpConfig: ourMcpConfig,
     };
   },
 

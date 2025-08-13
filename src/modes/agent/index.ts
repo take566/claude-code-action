@@ -65,24 +65,37 @@ export const agentMode: Mode = {
     const currentBranch =
       process.env.GITHUB_HEAD_REF || process.env.GITHUB_REF_NAME || "main";
 
-    // Get MCP configuration with GitHub servers when requested
-    const additionalMcpConfig = process.env.MCP_CONFIG || "";
-    const mcpConfig = await prepareMcpConfig({
+    // Get our GitHub MCP servers config
+    const ourMcpConfig = await prepareMcpConfig({
       githubToken,
       owner: context.repository.owner,
       repo: context.repository.repo,
       branch: currentBranch,
       baseBranch: context.inputs.baseBranch || "main",
-      additionalMcpConfig,
       claudeCommentId: undefined, // No tracking comment in agent mode
       allowedTools,
       context,
     });
 
-    // Build final claude_args
-    const escapedMcpConfig = mcpConfig.replace(/'/g, "'\\''");
-    const claudeArgs =
-      `--mcp-config '${escapedMcpConfig}' ${userClaudeArgs}`.trim();
+    // Build final claude_args with multiple --mcp-config flags
+    let claudeArgs = "";
+
+    // Add our GitHub servers config if we have any
+    const ourConfig = JSON.parse(ourMcpConfig);
+    if (ourConfig.mcpServers && Object.keys(ourConfig.mcpServers).length > 0) {
+      const escapedOurConfig = ourMcpConfig.replace(/'/g, "'\\''");
+      claudeArgs = `--mcp-config '${escapedOurConfig}'`;
+    }
+
+    // Add user's MCP_CONFIG env var as separate --mcp-config
+    const userMcpConfig = process.env.MCP_CONFIG;
+    if (userMcpConfig?.trim()) {
+      const escapedUserConfig = userMcpConfig.replace(/'/g, "'\\''");
+      claudeArgs = `${claudeArgs} --mcp-config '${escapedUserConfig}'`.trim();
+    }
+
+    // Append user's claude_args (which may have more --mcp-config flags)
+    claudeArgs = `${claudeArgs} ${userClaudeArgs}`.trim();
 
     core.setOutput("claude_args", claudeArgs);
 
@@ -93,7 +106,7 @@ export const agentMode: Mode = {
         currentBranch,
         claudeBranch: undefined,
       },
-      mcpConfig,
+      mcpConfig: ourMcpConfig,
     };
   },
 
