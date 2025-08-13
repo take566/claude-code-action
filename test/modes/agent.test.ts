@@ -124,8 +124,8 @@ describe("Agent Mode", () => {
     expect(result).toEqual({
       commentId: undefined,
       branchInfo: {
-        baseBranch: "",
-        currentBranch: "",
+        baseBranch: "main",
+        currentBranch: "main",
         claudeBranch: undefined,
       },
       mcpConfig: expect.any(String),
