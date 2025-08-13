@@ -47,7 +47,8 @@ describe("parseAllowedTools", () => {
   });
 
   test("handles multiple flags with allowedTools in middle", () => {
-    const args = '--flag1 value1 --allowedTools "mcp__github__*" --flag2 value2';
+    const args =
+      '--flag1 value1 --allowedTools "mcp__github__*" --flag2 value2';
     expect(parseAllowedTools(args)).toEqual(["mcp__github__*"]);
   });
 
@@ -60,7 +61,8 @@ describe("parseAllowedTools", () => {
   });
 
   test("handles tools with special characters", () => {
-    const args = '--allowedTools "mcp__github__create_issue,mcp__github_comment__update"';
+    const args =
+      '--allowedTools "mcp__github__create_issue,mcp__github_comment__update"';
     expect(parseAllowedTools(args)).toEqual([
       "mcp__github__create_issue",
       "mcp__github_comment__update",

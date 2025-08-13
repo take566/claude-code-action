@@ -68,7 +68,7 @@ export async function prepareMcpConfig(
     const hasGitHubMcpTools = allowedToolsList.some((tool) =>
       tool.startsWith("mcp__github__"),
     );
-    
+
     const hasInlineCommentTools = allowedToolsList.some((tool) =>
       tool.startsWith("mcp__github_inline_comment__"),
     );
@@ -115,9 +115,13 @@ export async function prepareMcpConfig(
         },
       };
     }
-    
+
     // Include inline comment server for PRs when requested via allowed tools
-    if (isEntityContext(context) && context.isPR && (hasGitHubMcpTools || hasInlineCommentTools)) {
+    if (
+      isEntityContext(context) &&
+      context.isPR &&
+      (hasGitHubMcpTools || hasInlineCommentTools)
+    ) {
       baseMcpConfig.mcpServers.github_inline_comment = {
         command: "bun",
         args: [

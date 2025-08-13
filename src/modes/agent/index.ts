@@ -46,11 +46,12 @@ export const agentMode: Mode = {
     await mkdir(`${process.env.RUNNER_TEMP}/claude-prompts`, {
       recursive: true,
     });
-    
+
     // Write the prompt file - use the user's prompt directly
-    const promptContent = context.inputs.prompt || 
+    const promptContent =
+      context.inputs.prompt ||
       `Repository: ${context.repository.owner}/${context.repository.repo}`;
-    
+
     await writeFile(
       `${process.env.RUNNER_TEMP}/claude-prompts/claude-prompt.txt`,
       promptContent,
@@ -59,12 +60,11 @@ export const agentMode: Mode = {
     // Parse allowed tools from user's claude_args
     const userClaudeArgs = process.env.CLAUDE_ARGS || "";
     const allowedTools = parseAllowedTools(userClaudeArgs);
-    
+
     // Detect current branch from GitHub environment
-    const currentBranch = process.env.GITHUB_HEAD_REF || 
-                         process.env.GITHUB_REF_NAME || 
-                         "main";
-    
+    const currentBranch =
+      process.env.GITHUB_HEAD_REF || process.env.GITHUB_REF_NAME || "main";
+
     // Get MCP configuration with GitHub servers when requested
     const additionalMcpConfig = process.env.MCP_CONFIG || "";
     const mcpConfig = await prepareMcpConfig({
@@ -81,8 +81,9 @@ export const agentMode: Mode = {
 
     // Build final claude_args
     const escapedMcpConfig = mcpConfig.replace(/'/g, "'\\''");
-    const claudeArgs = `--mcp-config '${escapedMcpConfig}' ${userClaudeArgs}`.trim();
-    
+    const claudeArgs =
+      `--mcp-config '${escapedMcpConfig}' ${userClaudeArgs}`.trim();
+
     core.setOutput("claude_args", claudeArgs);
 
     return {
