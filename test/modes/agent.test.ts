@@ -109,7 +109,7 @@ describe("Agent Mode", () => {
     const originalRefName = process.env.GITHUB_REF_NAME;
     delete process.env.GITHUB_HEAD_REF;
     delete process.env.GITHUB_REF_NAME;
-    
+
     // Set CLAUDE_ARGS environment variable
     process.env.CLAUDE_ARGS = "--model claude-sonnet-4 --max-turns 10";
 
@@ -139,8 +139,10 @@ describe("Agent Mode", () => {
 
     // Clean up
     delete process.env.CLAUDE_ARGS;
-    if (originalHeadRef !== undefined) process.env.GITHUB_HEAD_REF = originalHeadRef;
-    if (originalRefName !== undefined) process.env.GITHUB_REF_NAME = originalRefName;
+    if (originalHeadRef !== undefined)
+      process.env.GITHUB_HEAD_REF = originalHeadRef;
+    if (originalRefName !== undefined)
+      process.env.GITHUB_REF_NAME = originalRefName;
   });
 
   test("prepare method creates prompt file with correct content", async () => {
