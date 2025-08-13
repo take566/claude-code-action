@@ -120,12 +120,13 @@ describe("Agent Mode", () => {
     expect(callArgs[1]).toContain("--mcp-config");
     expect(callArgs[1]).toContain("--model claude-sonnet-4 --max-turns 10");
 
-    // Verify return structure
+    // Verify return structure - branch will be whatever is in env or "main" as fallback
+    const expectedBranch = process.env.GITHUB_HEAD_REF || process.env.GITHUB_REF_NAME || "main";
     expect(result).toEqual({
       commentId: undefined,
       branchInfo: {
         baseBranch: "main",
-        currentBranch: "main",
+        currentBranch: expectedBranch,
         claudeBranch: undefined,
       },
       mcpConfig: expect.any(String),
