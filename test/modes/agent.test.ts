@@ -104,6 +104,12 @@ describe("Agent Mode", () => {
       eventName: "workflow_dispatch",
     });
 
+    // Save original env vars and set test values
+    const originalHeadRef = process.env.GITHUB_HEAD_REF;
+    const originalRefName = process.env.GITHUB_REF_NAME;
+    delete process.env.GITHUB_HEAD_REF;
+    delete process.env.GITHUB_REF_NAME;
+    
     // Set CLAUDE_ARGS environment variable
     process.env.CLAUDE_ARGS = "--model claude-sonnet-4 --max-turns 10";
 
@@ -120,13 +126,12 @@ describe("Agent Mode", () => {
     expect(callArgs[1]).toContain("--mcp-config");
     expect(callArgs[1]).toContain("--model claude-sonnet-4 --max-turns 10");
 
-    // Verify return structure - branch will be whatever is in env or "main" as fallback
-    const expectedBranch = process.env.GITHUB_HEAD_REF || process.env.GITHUB_REF_NAME || "main";
+    // Verify return structure - should use "main" as fallback when no env vars set
     expect(result).toEqual({
       commentId: undefined,
       branchInfo: {
         baseBranch: "main",
-        currentBranch: expectedBranch,
+        currentBranch: "main",
         claudeBranch: undefined,
       },
       mcpConfig: expect.any(String),
@@ -134,6 +139,8 @@ describe("Agent Mode", () => {
 
     // Clean up
     delete process.env.CLAUDE_ARGS;
+    if (originalHeadRef !== undefined) process.env.GITHUB_HEAD_REF = originalHeadRef;
+    if (originalRefName !== undefined) process.env.GITHUB_REF_NAME = originalRefName;
   });
 
   test("prepare method creates prompt file with correct content", async () => {
