@@ -221,7 +221,7 @@ describe("setupClaudeCodeSettings", () => {
     const projectDir = join(testHomeDir, "test-project");
     const projectAgentsDir = join(projectDir, ".claude", "agents");
     await mkdir(projectAgentsDir, { recursive: true });
-    
+
     // Create test agent files
     await writeFile(
       join(projectAgentsDir, "test-agent.md"),
@@ -231,20 +231,20 @@ describe("setupClaudeCodeSettings", () => {
       join(projectAgentsDir, "another-agent.md"),
       "---\nname: another-agent\n---\nAnother agent",
     );
-    
+
     // Set GITHUB_WORKSPACE to the test project directory
     const originalWorkspace = process.env.GITHUB_WORKSPACE;
     process.env.GITHUB_WORKSPACE = projectDir;
-    
+
     try {
       await setupClaudeCodeSettings(undefined, testHomeDir);
-      
+
       // Check that agents were copied
       const agentsDir = join(testHomeDir, ".claude", "agents");
       const files = await readdir(agentsDir);
       expect(files).toContain("test-agent.md");
       expect(files).toContain("another-agent.md");
-      
+
       // Verify content was copied correctly
       const content = await readFile(join(agentsDir, "test-agent.md"), "utf-8");
       expect(content).toContain("Test agent content");
@@ -262,13 +262,13 @@ describe("setupClaudeCodeSettings", () => {
     // Set GITHUB_WORKSPACE to a directory without .claude/agents
     const projectDir = join(testHomeDir, "project-without-agents");
     await mkdir(projectDir, { recursive: true });
-    
+
     const originalWorkspace = process.env.GITHUB_WORKSPACE;
     process.env.GITHUB_WORKSPACE = projectDir;
-    
+
     try {
       await setupClaudeCodeSettings(undefined, testHomeDir);
-      
+
       // Should complete without errors
       const settingsContent = await readFile(settingsPath, "utf-8");
       const settings = JSON.parse(settingsContent);
