@@ -81,6 +81,48 @@ export function buildAllowedToolsString(
   return allAllowedTools;
 }
 
+/**
+ * Specialized allowed tools string for remote agent mode
+ * Always uses MCP commit signing and excludes dangerous git commands
+ */
+export function buildRemoteAgentAllowedToolsString(
+  customAllowedTools?: string[],
+  includeActionsTools: boolean = false,
+): string {
+  let baseTools = [...BASE_ALLOWED_TOOLS];
+
+  // Always include the comment update tool from the comment server
+  baseTools.push("mcp__github_comment__update_claude_comment");
+
+  // Remote agent mode always uses MCP commit signing
+  baseTools.push(
+    "mcp__github_file_ops__commit_files",
+    "mcp__github_file_ops__delete_files",
+  );
+
+  // Add safe git tools only (read-only operations)
+  baseTools.push(
+    "Bash(git status:*)",
+    "Bash(git diff:*)",
+    "Bash(git log:*)",
+  );
+
+  // Add GitHub Actions MCP tools if enabled
+  if (includeActionsTools) {
+    baseTools.push(
+      "mcp__github_ci__get_ci_status",
+      "mcp__github_ci__get_workflow_run_details",
+      "mcp__github_ci__download_job_log",
+    );
+  }
+
+  let allAllowedTools = baseTools.join(",");
+  if (customAllowedTools && customAllowedTools.length > 0) {
+    allAllowedTools = `${allAllowedTools},${customAllowedTools.join(",")}`;
+  }
+  return allAllowedTools;
+}
+
 export function buildDisallowedToolsString(
   customDisallowedTools?: string[],
   allowedTools?: string[],

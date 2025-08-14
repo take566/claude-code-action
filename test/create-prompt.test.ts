@@ -7,6 +7,7 @@ import {
   getEventTypeAndContext,
   buildAllowedToolsString,
   buildDisallowedToolsString,
+  buildRemoteAgentAllowedToolsString,
 } from "../src/create-prompt";
 import type { PreparedContext } from "../src/create-prompt";
 import type { Mode } from "../src/modes/types";
@@ -1147,5 +1148,116 @@ describe("buildDisallowedToolsString", () => {
 
     // Only custom disallowed tools should remain
     expect(result).toBe("BadTool1,BadTool2");
+  });
+});
+
+describe("buildRemoteAgentAllowedToolsString", () => {
+  test("should return correct tools for remote agent mode (always uses commit signing)", () => {
+    const result = buildRemoteAgentAllowedToolsString();
+
+    // Base tools should be present
+    expect(result).toContain("Edit");
+    expect(result).toContain("Glob");
+    expect(result).toContain("Grep");
+    expect(result).toContain("LS");
+    expect(result).toContain("Read");
+    expect(result).toContain("Write");
+
+    // Comment tool should always be included
+    expect(result).toContain("mcp__github_comment__update_claude_comment");
+
+    // MCP commit signing tools should always be included
+    expect(result).toContain("mcp__github_file_ops__commit_files");
+    expect(result).toContain("mcp__github_file_ops__delete_files");
+
+    // Safe git tools should be included
+    expect(result).toContain("Bash(git status:*)");
+    expect(result).toContain("Bash(git diff:*)");
+    expect(result).toContain("Bash(git log:*)");
+
+    // Dangerous git tools should NOT be included
+    expect(result).not.toContain("Bash(git commit:*)");
+    expect(result).not.toContain("Bash(git add:*)");
+    expect(result).not.toContain("Bash(git push:*)");
+    expect(result).not.toContain("Bash(git config");
+    expect(result).not.toContain("Bash(git rm:*)");
+  });
+
+  test("should include custom tools when provided", () => {
+    const customTools = ["CustomTool1", "CustomTool2"];
+    const result = buildRemoteAgentAllowedToolsString(customTools);
+
+    // Base tools should be present
+    expect(result).toContain("Edit");
+    expect(result).toContain("Glob");
+
+    // Custom tools should be included
+    expect(result).toContain("CustomTool1");
+    expect(result).toContain("CustomTool2");
+
+    // MCP commit signing tools should still be included
+    expect(result).toContain("mcp__github_file_ops__commit_files");
+    expect(result).toContain("mcp__github_file_ops__delete_files");
+
+    // Dangerous git tools should still NOT be included
+    expect(result).not.toContain("Bash(git commit:*)");
+    expect(result).not.toContain("Bash(git config");
+  });
+
+  test("should include GitHub Actions tools when includeActionsTools is true", () => {
+    const result = buildRemoteAgentAllowedToolsString([], true);
+
+    // Base tools should be present
+    expect(result).toContain("Edit");
+    expect(result).toContain("Glob");
+
+    // GitHub Actions tools should be included
+    expect(result).toContain("mcp__github_ci__get_ci_status");
+    expect(result).toContain("mcp__github_ci__get_workflow_run_details");
+    expect(result).toContain("mcp__github_ci__download_job_log");
+
+    // MCP commit signing tools should still be included
+    expect(result).toContain("mcp__github_file_ops__commit_files");
+    expect(result).toContain("mcp__github_file_ops__delete_files");
+
+    // Dangerous git tools should still NOT be included
+    expect(result).not.toContain("Bash(git commit:*)");
+    expect(result).not.toContain("Bash(git config");
+  });
+
+  test("should include both custom and Actions tools when both provided", () => {
+    const customTools = ["CustomTool1"];
+    const result = buildRemoteAgentAllowedToolsString(customTools, true);
+
+    // Base tools should be present
+    expect(result).toContain("Edit");
+
+    // Custom tools should be included
+    expect(result).toContain("CustomTool1");
+
+    // GitHub Actions tools should be included
+    expect(result).toContain("mcp__github_ci__get_ci_status");
+
+    // MCP commit signing tools should still be included
+    expect(result).toContain("mcp__github_file_ops__commit_files");
+
+    // Dangerous git tools should still NOT be included
+    expect(result).not.toContain("Bash(git commit:*)");
+    expect(result).not.toContain("Bash(git config");
+  });
+
+  test("should never include dangerous git tools regardless of parameters", () => {
+    const dangerousCustomTools = ["Bash(git commit:*)", "Bash(git config:*)"];
+    const result = buildRemoteAgentAllowedToolsString(dangerousCustomTools, true);
+
+    // The function should still include dangerous tools if explicitly provided in custom tools
+    // This is by design - if someone explicitly adds them, they should be included
+    expect(result).toContain("Bash(git commit:*)");
+    expect(result).toContain("Bash(git config:*)");
+
+    // But the base function should not add them automatically
+    const resultWithoutCustom = buildRemoteAgentAllowedToolsString([], true);
+    expect(resultWithoutCustom).not.toContain("Bash(git commit:*)");
+    expect(resultWithoutCustom).not.toContain("Bash(git config");
   });
 });

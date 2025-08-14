@@ -4,11 +4,10 @@ import type { Mode, ModeOptions, ModeResult } from "../types";
 import { isRepositoryDispatchEvent } from "../../github/context";
 import type { GitHubContext } from "../../github/context";
 import { setupBranch } from "../../github/operations/branch";
-import { configureGitAuth } from "../../github/operations/git-config";
 import { prepareMcpConfig } from "../../mcp/install-mcp-server";
 import { GITHUB_SERVER_URL } from "../../github/api/config";
 import {
-  buildAllowedToolsString,
+  buildRemoteAgentAllowedToolsString,
   buildDisallowedToolsString,
   type PreparedContext,
 } from "../../create-prompt";
@@ -223,29 +222,8 @@ export const remoteAgentMode: Mode = {
       throw error;
     }
 
-    // Configure git authentication if not using commit signing
-    if (!context.inputs.useCommitSigning) {
-      try {
-        // Force Claude bot as git user
-        await configureGitAuth(githubToken, context, {
-          login: "claude[bot]",
-          id: 209825114,
-        });
-      } catch (error) {
-        console.error("Failed to configure git authentication:", error);
-        // Report failure if we have system progress config
-        if (systemProgressConfig) {
-          reportWorkflowFailed(
-            systemProgressConfig,
-            oidcToken,
-            "initialization",
-            error as Error,
-            "git_config_failed",
-          );
-        }
-        throw error;
-      }
-    }
+    // Remote agent mode always uses commit signing for security
+    // No git authentication configuration needed as we use GitHub API
 
     // Report workflow initialized
     if (systemProgressConfig) {
@@ -337,10 +315,9 @@ export const remoteAgentMode: Mode = {
     const hasActionsReadPermission =
       context.inputs.additionalPermissions.get("actions") === "read";
 
-    const allowedToolsString = buildAllowedToolsString(
+    const allowedToolsString = buildRemoteAgentAllowedToolsString(
       context.inputs.allowedTools,
       hasActionsReadPermission,
-      context.inputs.useCommitSigning,
     );
     const disallowedToolsString = buildDisallowedToolsString(
       context.inputs.disallowedTools,
@@ -425,26 +402,12 @@ function generateDispatchSystemPrompt(
       ? `Co-authored-by: ${triggerDisplayName ?? triggerUsername} <${triggerUsername}@users.noreply.github.com>`
       : "";
 
-  let commitInstructions = "";
-  if (context.inputs.useCommitSigning) {
-    commitInstructions = `- Use mcp__github_file_ops__commit_files and mcp__github_file_ops__delete_files to commit and push changes`;
-    if (coAuthorLine) {
-      commitInstructions += `
+  // Remote agent mode always uses MCP for commit signing
+  let commitInstructions = `- Use mcp__github_file_ops__commit_files and mcp__github_file_ops__delete_files to commit and push changes`;
+  if (coAuthorLine) {
+    commitInstructions += `
 - When pushing changes, include a Co-authored-by trailer in the commit message
 - Use: "${coAuthorLine}"`;
-    }
-  } else {
-    commitInstructions = `- Use git commands via the Bash tool to commit and push your changes:
-  - Stage files: Bash(git add <files>)
-  - Commit with a descriptive message: Bash(git commit -m "<message>")`;
-    if (coAuthorLine) {
-      commitInstructions += `
-  - When committing, include a Co-authored-by trailer:
-    Bash(git commit -m "<message>\\n\\n${coAuthorLine}")`;
-    }
-    commitInstructions += `
-  - Be sure to follow your commit message guidelines
-  - Push to the remote: Bash(git push origin HEAD)`;
   }
 
   return `You are Claude, an AI assistant designed to help with GitHub issues and pull requests. Think carefully as you analyze the context and respond appropriately. Here's the context for your current task:
