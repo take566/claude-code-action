@@ -101,11 +101,7 @@ export function buildRemoteAgentAllowedToolsString(
   );
 
   // Add safe git tools only (read-only operations)
-  baseTools.push(
-    "Bash(git status:*)",
-    "Bash(git diff:*)",
-    "Bash(git log:*)",
-  );
+  baseTools.push("Bash(git status:*)", "Bash(git diff:*)", "Bash(git log:*)");
 
   // Add GitHub Actions MCP tools if enabled
   if (includeActionsTools) {

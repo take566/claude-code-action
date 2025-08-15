@@ -1248,7 +1248,10 @@ describe("buildRemoteAgentAllowedToolsString", () => {
 
   test("should never include dangerous git tools regardless of parameters", () => {
     const dangerousCustomTools = ["Bash(git commit:*)", "Bash(git config:*)"];
-    const result = buildRemoteAgentAllowedToolsString(dangerousCustomTools, true);
+    const result = buildRemoteAgentAllowedToolsString(
+      dangerousCustomTools,
+      true,
+    );
 
     // The function should still include dangerous tools if explicitly provided in custom tools
     // This is by design - if someone explicitly adds them, they should be included
