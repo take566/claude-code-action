@@ -1,6 +1,8 @@
 import type { Octokits } from "../api/client";
 import { GITHUB_SERVER_URL } from "../api/config";
 import { $ } from "bun";
+import { resignCommits } from "./resign-commits";
+import { parseGitHubContext } from "../context";
 
 export async function checkAndCommitOrDeleteBranch(
   octokit: Octokits,
@@ -101,7 +103,48 @@ export async function checkAndCommitOrDeleteBranch(
           shouldDeleteBranch = true;
         }
       } else {
-        // Only add branch link if there are commits
+        // Branch has commits
+        console.log(
+          `Branch ${claudeBranch} has ${comparison.total_commits} commits`,
+        );
+
+        // First, check for any uncommitted changes
+        try {
+          const gitStatus = await $`git status --porcelain`.quiet();
+          const hasUncommittedChanges =
+            gitStatus.stdout.toString().trim().length > 0;
+
+          if (hasUncommittedChanges) {
+            console.log(
+              "Found uncommitted changes after commits, committing them...",
+            );
+
+            // Add all changes
+            await $`git add -A`;
+
+            // Commit any remaining changes
+            const runId = process.env.GITHUB_RUN_ID || "unknown";
+            const commitMessage = `Auto-commit: Save remaining changes from Claude\n\nRun ID: ${runId}`;
+            await $`git commit -m ${commitMessage}`;
+
+            // Push the changes
+            await $`git push origin ${claudeBranch}`;
+
+            console.log(
+              "✅ Successfully committed and pushed remaining changes",
+            );
+          }
+        } catch (gitError) {
+          console.error("Error checking for remaining changes:", gitError);
+        }
+
+        // Re-sign all commits made by Claude if commit signing is enabled
+        if (useCommitSigning) {
+          const context = parseGitHubContext();
+          await resignCommits(claudeBranch, baseBranch, octokit, context);
+        }
+
+        // Add branch link since there are commits
         const branchUrl = `${GITHUB_SERVER_URL}/${owner}/${repo}/tree/${claudeBranch}`;
         branchLink = `\n[View branch](${branchUrl})`;
       }
