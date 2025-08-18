@@ -169,6 +169,7 @@ export async function runClaude(promptPath: string, options: ClaudeOptions) {
       ...config.env,
     },
   });
+  console.log("yolo", process.env);
 
   // Handle Claude process errors
   claudeProcess.on("error", (error) => {
