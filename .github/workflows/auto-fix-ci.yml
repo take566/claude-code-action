@@ -80,7 +80,7 @@ jobs:
         uses: km-anthropic/claude-code-action@v1-dev
         with:
           prompt: |
-            /fix-ci Failed CI Run: ${{ fromJSON(steps.failure_details.outputs.result).runUrl }}
+            /fix-ci-commit Failed CI Run: ${{ fromJSON(steps.failure_details.outputs.result).runUrl }}
             Failed Jobs: ${{ join(fromJSON(steps.failure_details.outputs.result).failedJobs, ', ') }}
             
             Error logs:

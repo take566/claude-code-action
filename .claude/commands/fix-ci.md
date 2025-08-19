@@ -42,11 +42,11 @@ Requirements:
 
 ## Step 4: Commit Changes
 
-After applying fixes:
-1. Stage all modified files with `git add -A` or `git add .`
-2. Commit with a descriptive message using `git commit -m "Fix CI failures: <description>"`
+After applying ALL fixes, use the Bash tool to:
+1. Run: `git add -A` to stage all modified files
+2. Run: `git commit -m "Fix CI failures: <description>"` to commit the changes
 3. Include details about which CI jobs/tests were fixed in the commit message
-4. Important: Always commit your changes even if you're already on a branch
+4. Important: You MUST use the Bash tool to run these git commands to commit your changes
 
 ## Step 5: Verify Fixes Locally
 
