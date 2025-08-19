@@ -12,9 +12,12 @@ import { createOctokit } from "../github/api/client";
 import { parseGitHubContext, isEntityContext } from "../github/context";
 import { getMode } from "../modes/registry";
 import { prepare } from "../prepare";
+import { collectActionInputsPresence } from "./collect-inputs";
 
 async function run() {
   try {
+    collectActionInputsPresence();
+
     // Parse GitHub context first to enable mode detection
     const context = parseGitHubContext();
 
