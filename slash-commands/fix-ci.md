@@ -1,6 +1,5 @@
 ---
 description: Analyze and fix CI failures by examining logs and making targeted fixes
-allowed_tools: "Read, Write, Edit, MultiEdit, Bash, Grep, Glob, TodoWrite"
 ---
 
 # Fix CI Failures

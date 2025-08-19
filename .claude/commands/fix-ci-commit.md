@@ -1,6 +1,5 @@
 ---
 description: Fix CI failures and commit changes (for use when branch already exists)
-allowed_tools: "Read, Write, Edit, MultiEdit, Bash, Grep, Glob, TodoWrite"
 ---
 
 # Fix CI Failures and Commit
