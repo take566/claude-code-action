@@ -83,6 +83,29 @@ export const agentMode: Mode = {
       },
     };
 
+    // Add GitHub file ops server when using commit signing
+    if (context.inputs?.useCommitSigning) {
+      mcpConfig.mcpServers["github-file-ops-server"] = {
+        command: "bun",
+        args: [
+          "run",
+          `${process.env.GITHUB_ACTION_PATH}/src/mcp/github-file-ops-server.ts`,
+        ],
+        env: {
+          GITHUB_TOKEN: githubToken || "",
+          REPO_OWNER: context.repository.owner,
+          REPO_NAME: context.repository.repo,
+          BRANCH_NAME: "", // Agent mode doesn't pre-create branches
+          BASE_BRANCH: "",
+          REPO_DIR: process.env.GITHUB_WORKSPACE || process.cwd(),
+          GITHUB_EVENT_NAME: process.env.GITHUB_EVENT_NAME || "",
+          IS_PR: "false", // Agent mode doesn't create PRs by default
+          GITHUB_API_URL:
+            process.env.GITHUB_API_URL || "https://api.github.com",
+        },
+      };
+    }
+
     // Add user-provided additional MCP config if any
     const additionalMcpConfig = process.env.MCP_CONFIG || "";
     if (additionalMcpConfig.trim()) {
@@ -101,12 +124,23 @@ export const agentMode: Mode = {
       }
     }
 
-    // Agent mode: pass through user's claude_args with MCP config
+    // Agent mode: pass through user's claude_args with MCP config and allowed_tools
     const userClaudeArgs = process.env.CLAUDE_ARGS || "";
+    const userAllowedTools = process.env.ALLOWED_TOOLS || "";
     const escapedMcpConfig = JSON.stringify(mcpConfig).replace(/'/g, "'\\''");
-    const claudeArgs =
-      `--mcp-config '${escapedMcpConfig}' ${userClaudeArgs}`.trim();
-    core.setOutput("claude_args", claudeArgs);
+    let claudeArgs = `--mcp-config '${escapedMcpConfig}'`;
+    
+    // Add allowed_tools if specified
+    if (userAllowedTools) {
+      claudeArgs += ` --allowedTools "${userAllowedTools}"`;
+    }
+    
+    // Add user's additional claude_args
+    if (userClaudeArgs) {
+      claudeArgs += ` ${userClaudeArgs}`;
+    }
+    
+    core.setOutput("claude_args", claudeArgs.trim());
 
     return {
       commentId: undefined,

@@ -81,6 +81,10 @@ inputs:
     description: "Enable commit signing using GitHub's commit signature verification. When false, Claude uses standard git commands"
     required: false
     default: "false"
+  allowed_tools:
+    description: "Comma-separated list of tools to allow Claude to use (e.g., 'Edit,MultiEdit,Write,Read'). If not set, mode defaults apply."
+    required: false
+    default: ""
   experimental_allowed_domains:
     description: "Restrict network access to these domains only (newline-separated). If not set, no restrictions are applied. Provider domains are auto-detected."
     required: false
@@ -130,6 +134,7 @@ runs:
         ADDITIONAL_PERMISSIONS: ${{ inputs.additional_permissions }}
         CLAUDE_ARGS: ${{ inputs.claude_args }}
         MCP_CONFIG: ${{ inputs.mcp_config }}
+        ALLOWED_TOOLS: ${{ inputs.allowed_tools }}
 
     - name: Install Base Action Dependencies
       if: steps.prepare.outputs.contains_trigger == 'true'
