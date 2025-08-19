@@ -42,11 +42,11 @@ Requirements:
 
 ## Step 4: Commit Changes
 
-After applying ALL fixes, use the Bash tool to:
-1. Run: `git add -A` to stage all modified files
-2. Run: `git commit -m "Fix CI failures: <description>"` to commit the changes
-3. Include details about which CI jobs/tests were fixed in the commit message
-4. Important: You MUST use the Bash tool to run these git commands to commit your changes
+After applying ALL fixes:
+1. Use the `mcp__github_file_ops__commit_files` tool to commit your changes
+2. Include a descriptive commit message explaining what was fixed
+3. Document which CI jobs/tests were addressed in the commit message
+4. Important: Use the MCP file ops tool, not git commands directly
 
 ## Step 5: Verify Fixes Locally
 

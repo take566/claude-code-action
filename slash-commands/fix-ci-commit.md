@@ -31,20 +31,18 @@ Based on the error logs:
 
 After fixing ALL issues, you MUST:
 
-```bash
-# Stage all changes
-git add -A
+Use the `mcp__github_file_ops__commit_files` tool to commit all your changes with a descriptive message like:
 
-# Commit with descriptive message
-git commit -m "Fix CI failures
+```
+Fix CI failures
 
 - Fixed syntax errors
 - Fixed formatting issues  
 - Fixed test failures
-[List actual fixes made]"
+[List actual fixes made]
 ```
 
-**IMPORTANT**: You MUST use the Bash tool to run the git add and git commit commands above. The workflow expects you to commit your changes.
+**IMPORTANT**: You MUST use the MCP file ops tool to commit your changes. The workflow expects you to commit your changes.
 
 ### 3. Verify (Optional)
 

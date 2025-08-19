@@ -89,6 +89,7 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           timeout_minutes: "30"
           use_sticky_comment: "true"
+          use_commit_signing: "true"
           claude_args: "--max-turns 15"
 
       - name: Push fix branch

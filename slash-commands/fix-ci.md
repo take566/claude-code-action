@@ -43,10 +43,10 @@ Requirements:
 ## Step 4: Commit Changes
 
 After applying fixes:
-1. Stage all modified files with `git add -A` or `git add .`
-2. Commit with a descriptive message using `git commit -m "Fix CI failures: <description>"`
-3. Include details about which CI jobs/tests were fixed in the commit message
-4. Important: Always commit your changes even if you're already on a branch
+1. Use the `mcp__github_file_ops__commit_files` tool to commit your changes
+2. Include a descriptive commit message explaining what was fixed
+3. Document which CI jobs/tests were addressed in the commit message
+4. Important: Use the MCP file ops tool to commit your changes
 
 ## Step 5: Verify Fixes Locally
 
