@@ -45,7 +45,11 @@ const ENTITY_EVENT_NAMES = [
   "pull_request_review_comment",
 ] as const;
 
-const AUTOMATION_EVENT_NAMES = ["workflow_dispatch", "schedule", "workflow_run"] as const;
+const AUTOMATION_EVENT_NAMES = [
+  "workflow_dispatch",
+  "schedule",
+  "workflow_run",
+] as const;
 
 // Derive types from constants for better maintainability
 type EntityEventName = (typeof ENTITY_EVENT_NAMES)[number];
