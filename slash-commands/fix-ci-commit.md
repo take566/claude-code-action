@@ -1,5 +1,6 @@
 ---
 description: Fix CI failures and commit changes (for use when branch already exists)
+allowed_tools: "*"
 ---
 
 # Fix CI Failures and Commit

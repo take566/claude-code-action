@@ -1,5 +1,6 @@
 ---
 description: Analyze and fix CI failures by examining logs and making targeted fixes
+allowed_tools: "*"
 ---
 
 # Fix CI Failures
