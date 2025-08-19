@@ -40,13 +40,13 @@ Requirements:
 - Ensure changes are production-ready, not temporary hacks
 - Preserve existing functionality while fixing issues
 
-## Step 4: Create Branch and Commit Changes
+## Step 4: Commit Changes
 
 After applying fixes:
-1. Create a branch named `claude-fix-ci-${timestamp}` 
-2. Stage all modified files with `git add`
-3. Commit with a descriptive message explaining what was fixed
-4. Document which CI jobs/tests were addressed
+1. Stage all modified files with `git add -A` or `git add .`
+2. Commit with a descriptive message using `git commit -m "Fix CI failures: <description>"`
+3. Include details about which CI jobs/tests were fixed in the commit message
+4. Important: Always commit your changes even if you're already on a branch
 
 ## Step 5: Verify Fixes Locally
 

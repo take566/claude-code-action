@@ -120,12 +120,12 @@ jobs:
             - Ensure changes are production-ready, not temporary hacks
             - Preserve existing functionality while fixing issues
             
-            ## Step 4: Create Branch and Commit Changes
+            ## Step 4: Commit Changes
             
-            After applying fixes:
-            1. Stage all modified files with `git add`
-            2. Commit with a descriptive message explaining what was fixed
-            3. Document which CI jobs/tests were addressed
+            After applying ALL fixes:
+            1. Stage all modified files with `git add -A` 
+            2. Commit with: `git commit -m "Fix CI failures: prettier formatting and syntax errors"`
+            3. Important: You MUST commit your changes - the branch already exists
             
             ## Step 5: Verify Fixes Locally
             
