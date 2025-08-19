@@ -90,6 +90,7 @@ jobs:
           timeout_minutes: "30"
           use_sticky_comment: "true"
           use_commit_signing: "true"
+          allowed_tools: "Edit,MultiEdit,Write,Read,Glob,Grep,LS,Bash,mcp__github_file_ops__commit_files,mcp__github_file_ops__delete_files"
           claude_args: "--max-turns 15"
 
       - name: Push fix branch
