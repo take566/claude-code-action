@@ -3,12 +3,16 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
-import { readFile, stat } from "fs/promises";
+import { readFile, access, stat } from "fs/promises";
 import { join } from "path";
 import { constants } from "fs";
+import { execFile } from "child_process";
+import { promisify } from "util";
 import fetch from "node-fetch";
 import { GITHUB_API_URL } from "../github/api/config";
 import { retryWithBackoff } from "../utils/retry";
+
+const execFileAsync = promisify(execFile);
 
 type GitHubRef = {
   object: {
@@ -192,6 +196,48 @@ async function getFileMode(filePath: string): Promise<string> {
   }
 }
 
+// Helper function to run pre-commit hooks
+async function runPreCommitHooks(repoDir: string): Promise<void> {
+  const hookPath = join(repoDir, ".git", "hooks", "pre-commit");
+
+  try {
+    // Check if pre-commit hook exists and is executable
+    await access(hookPath);
+
+    console.log("Running pre-commit hook...");
+
+    // Execute the pre-commit hook
+    const { stdout, stderr } = await execFileAsync(hookPath, [], {
+      cwd: repoDir,
+      env: {
+        ...process.env,
+        GIT_INDEX_FILE: join(repoDir, ".git", "index"),
+        GIT_DIR: join(repoDir, ".git"),
+      },
+    });
+
+    if (stdout) console.log("Pre-commit hook stdout:", stdout);
+    if (stderr) console.log("Pre-commit hook stderr:", stderr);
+
+    console.log("Pre-commit hook passed");
+  } catch (error: any) {
+    if (error.code === "ENOENT") {
+      // Hook doesn't exist, that's fine
+      return;
+    }
+
+    if (error.code === "EACCES") {
+      console.log("Pre-commit hook exists but is not executable, skipping");
+      return;
+    }
+
+    // Hook failed with non-zero exit code
+    const errorMessage =
+      error.stderr || error.message || "Pre-commit hook failed";
+    throw new Error(`Pre-commit hook failed: ${errorMessage}`);
+  }
+}
+
 // Commit files tool
 server.tool(
   "commit_files",
@@ -203,8 +249,12 @@ server.tool(
         'Array of file paths relative to repository root (e.g. ["src/main.js", "README.md"]). All files must exist locally.',
       ),
     message: z.string().describe("Commit message"),
+    noVerify: z
+      .boolean()
+      .optional()
+      .describe("Skip pre-commit hooks (equivalent to git commit --no-verify)"),
   },
-  async ({ files, message }) => {
+  async ({ files, message, noVerify }) => {
     const owner = REPO_OWNER;
     const repo = REPO_NAME;
     const branch = BRANCH_NAME;
@@ -212,6 +262,11 @@ server.tool(
       const githubToken = process.env.GITHUB_TOKEN;
       if (!githubToken) {
         throw new Error("GITHUB_TOKEN environment variable is required");
+      }
+
+      // Run pre-commit hooks unless explicitly skipped
+      if (!noVerify) {
+        await runPreCommitHooks(REPO_DIR);
       }
 
       const processedFiles = files.map((filePath) => {
