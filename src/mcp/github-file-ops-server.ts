@@ -367,6 +367,7 @@ server.tool(
       // We're seeing intermittent 403 "Resource not accessible by integration" errors
       // on certain repos when updating git references. These appear to be transient
       // GitHub API issues that succeed on retry.
+      let lastErrorDetails: any = null;
       await retryWithBackoff(
         async () => {
           const updateRefResponse = await fetch(updateRefUrl, {
@@ -385,17 +386,48 @@ server.tool(
 
           if (!updateRefResponse.ok) {
             const errorText = await updateRefResponse.text();
+            let errorJson: any = {};
+            try {
+              errorJson = JSON.parse(errorText);
+            } catch {
+              // If not JSON, use the text as-is
+            }
+
+            // Collect debugging information
+            const debugInfo = {
+              status: updateRefResponse.status,
+              statusText: updateRefResponse.statusText,
+              headers: Object.fromEntries(updateRefResponse.headers.entries()),
+              errorBody: errorJson || errorText,
+              context: {
+                repository: `${owner}/${repo}`,
+                branch: branch,
+                baseBranch: process.env.BASE_BRANCH,
+                targetSha: newCommitData.sha,
+                parentSha: baseSha,
+                isGitHubAction: !!process.env.GITHUB_ACTIONS,
+                eventName: process.env.GITHUB_EVENT_NAME,
+                isPR: process.env.IS_PR,
+                tokenLength: githubToken?.length || 0,
+                tokenPrefix: githubToken?.substring(0, 10) + "...",
+                apiUrl: updateRefUrl,
+              },
+            };
+
+            lastErrorDetails = debugInfo;
+
             const error = new Error(
-              `Failed to update reference: ${updateRefResponse.status} - ${errorText}`,
+              `Failed to update reference: ${updateRefResponse.status} - ${errorText}\n\nDebug Info: ${JSON.stringify(debugInfo, null, 2)}`,
             );
 
             // Only retry on 403 errors - these are the intermittent failures we're targeting
             if (updateRefResponse.status === 403) {
+              console.error("403 Error encountered (will retry):", debugInfo);
               throw error;
             }
 
             // For non-403 errors, fail immediately without retry
-            console.error("Non-retryable error:", updateRefResponse.status);
+            console.error("Non-retryable error:", debugInfo);
             throw error;
           }
         },
@@ -405,7 +437,23 @@ server.tool(
           maxDelayMs: 5000, // Max 5 seconds delay
           backoffFactor: 2, // Double the delay each time
         },
-      );
+      ).catch((error) => {
+        // If all retries failed, enhance the error message with collected details
+        if (lastErrorDetails) {
+          throw new Error(
+            `All retry attempts failed for ref update.\n\n` +
+              `Final error: ${error.message}\n\n` +
+              `Debugging hints:\n` +
+              `- Check if branch '${branch}' is protected and the GitHub App has bypass permissions\n` +
+              `- Verify the token has 'contents:write' permission for ${owner}/${repo}\n` +
+              `- Check for concurrent operations updating the same branch\n` +
+              `- Token appears to be: ${lastErrorDetails.context.tokenPrefix}\n` +
+              `- This may be a transient GitHub API issue if it works on retry\n\n` +
+              `Full debug details: ${JSON.stringify(lastErrorDetails, null, 2)}`,
+          );
+        }
+        throw error;
+      });
 
       const simplifiedResult = {
         commit: {
@@ -573,6 +621,7 @@ server.tool(
       // We're seeing intermittent 403 "Resource not accessible by integration" errors
       // on certain repos when updating git references. These appear to be transient
       // GitHub API issues that succeed on retry.
+      let lastErrorDetails: any = null;
       await retryWithBackoff(
         async () => {
           const updateRefResponse = await fetch(updateRefUrl, {
@@ -591,18 +640,52 @@ server.tool(
 
           if (!updateRefResponse.ok) {
             const errorText = await updateRefResponse.text();
+            let errorJson: any = {};
+            try {
+              errorJson = JSON.parse(errorText);
+            } catch {
+              // If not JSON, use the text as-is
+            }
+
+            // Collect debugging information
+            const debugInfo = {
+              status: updateRefResponse.status,
+              statusText: updateRefResponse.statusText,
+              headers: Object.fromEntries(updateRefResponse.headers.entries()),
+              errorBody: errorJson || errorText,
+              context: {
+                operation: "delete_files",
+                repository: `${owner}/${repo}`,
+                branch: branch,
+                baseBranch: process.env.BASE_BRANCH,
+                targetSha: newCommitData.sha,
+                parentSha: baseSha,
+                isGitHubAction: !!process.env.GITHUB_ACTIONS,
+                eventName: process.env.GITHUB_EVENT_NAME,
+                isPR: process.env.IS_PR,
+                tokenLength: githubToken?.length || 0,
+                tokenPrefix: githubToken?.substring(0, 10) + "...",
+                apiUrl: updateRefUrl,
+              },
+            };
+
+            lastErrorDetails = debugInfo;
+
             const error = new Error(
-              `Failed to update reference: ${updateRefResponse.status} - ${errorText}`,
+              `Failed to update reference: ${updateRefResponse.status} - ${errorText}\n\nDebug Info: ${JSON.stringify(debugInfo, null, 2)}`,
             );
 
             // Only retry on 403 errors - these are the intermittent failures we're targeting
             if (updateRefResponse.status === 403) {
-              console.log("Received 403 error, will retry...");
+              console.error(
+                "403 Error encountered during delete (will retry):",
+                debugInfo,
+              );
               throw error;
             }
 
             // For non-403 errors, fail immediately without retry
-            console.error("Non-retryable error:", updateRefResponse.status);
+            console.error("Non-retryable error during delete:", debugInfo);
             throw error;
           }
         },
@@ -612,7 +695,23 @@ server.tool(
           maxDelayMs: 5000, // Max 5 seconds delay
           backoffFactor: 2, // Double the delay each time
         },
-      );
+      ).catch((error) => {
+        // If all retries failed, enhance the error message with collected details
+        if (lastErrorDetails) {
+          throw new Error(
+            `All retry attempts failed for ref update during file deletion.\n\n` +
+              `Final error: ${error.message}\n\n` +
+              `Debugging hints:\n` +
+              `- Check if branch '${branch}' is protected and the GitHub App has bypass permissions\n` +
+              `- Verify the token has 'contents:write' permission for ${owner}/${repo}\n` +
+              `- Check for concurrent operations updating the same branch\n` +
+              `- Token appears to be: ${lastErrorDetails.context.tokenPrefix}\n` +
+              `- This may be a transient GitHub API issue if it works on retry\n\n` +
+              `Full debug details: ${JSON.stringify(lastErrorDetails, null, 2)}`,
+          );
+        }
+        throw error;
+      });
 
       const simplifiedResult = {
         commit: {
