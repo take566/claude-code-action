@@ -3,12 +3,8 @@ import { mkdir, writeFile } from "fs/promises";
 import type { Mode, ModeOptions, ModeResult } from "../types";
 import { isRepositoryDispatchEvent } from "../../github/context";
 import type { GitHubContext } from "../../github/context";
-<<<<<<< HEAD
-import { setupBranch } from "../../github/operations/branch";
-=======
 import { setupBranchWithResume } from "./branch";
 import { configureGitAuth } from "../../github/operations/git-config";
->>>>>>> 7d60d87 (feat: add resume endpoint support for remote-agent mode)
 import { prepareMcpConfig } from "../../mcp/install-mcp-server";
 import { GITHUB_SERVER_URL } from "../../github/api/config";
 import {
@@ -229,7 +225,7 @@ export const remoteAgentMode: Mode = {
 
     // Remote agent mode always uses commit signing for security
     // No git authentication configuration needed as we use GitHub API
-    
+
     // Handle resume messages if they exist
     if (branchInfo.resumeMessages && branchInfo.resumeMessages.length > 0) {
       console.log(
@@ -237,9 +233,11 @@ export const remoteAgentMode: Mode = {
       );
       // Store resume messages for later use
       // These will be prepended to the conversation when Claude starts
-      core.setOutput("resume_messages", JSON.stringify(branchInfo.resumeMessages));
+      core.setOutput(
+        "resume_messages",
+        JSON.stringify(branchInfo.resumeMessages),
+      );
     }
-
 
     // Report workflow initialized
     if (systemProgressConfig) {
