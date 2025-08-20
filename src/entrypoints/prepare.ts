@@ -61,6 +61,9 @@ async function run() {
     });
 
     // MCP config is handled by individual modes (tag/agent) and included in their claude_args output
+    
+    // Expose the GitHub token (Claude App token) as an output
+    core.setOutput("github_token", githubToken);
 
     // Step 6: Get system prompt from mode if available
     if (mode.getSystemPrompt) {
