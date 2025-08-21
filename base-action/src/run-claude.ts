@@ -145,14 +145,6 @@ export async function runClaude(promptPath: string, options: ClaudeOptions) {
 
   console.log(`Prompt file size: ${promptSize} bytes`);
 
-  // Log custom environment variables if any
-  const customEnvKeys = Object.keys(config.env).filter(
-    (key) => key !== "CLAUDE_ACTION_INPUTS_PRESENT",
-  );
-  if (customEnvKeys.length > 0) {
-    console.log(`Custom environment variables: ${customEnvKeys.join(", ")}`);
-  }
-
   // Output to console
   console.log(`Running Claude with prompt from file: ${config.promptPath}`);
 
@@ -168,6 +160,11 @@ export async function runClaude(promptPath: string, options: ClaudeOptions) {
     pipeStream.destroy();
   });
 
+  console.log("yolo", process.env);
+  console.log("yolo running with", {
+    ...process.env,
+    ...config.env,
+  });
   const claudeProcess = spawn("claude", config.claudeArgs, {
     stdio: ["pipe", "pipe", "inherit"],
     env: {
