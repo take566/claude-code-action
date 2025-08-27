@@ -252,6 +252,10 @@ runs:
         STREAM_CONFIG: ${{ steps.prepare.outputs.stream_config }}
         CLAUDE_CONCLUSION: ${{ steps.claude-code.outputs.conclusion }}
         CLAUDE_START_TIME: ${{ steps.prepare.outputs.claude_start_time }}
+        CLAUDE_BRANCH: ${{ steps.prepare.outputs.CLAUDE_BRANCH }}
+        USE_COMMIT_SIGNING: ${{ inputs.use_commit_signing }}
+        GITHUB_TOKEN: ${{ steps.prepare.outputs.GITHUB_TOKEN }}
+        GITHUB_REPOSITORY: ${{ github.repository }}
 
     - name: Update comment with job link
       if: steps.prepare.outputs.contains_trigger == 'true' && steps.prepare.outputs.claude_comment_id && always()

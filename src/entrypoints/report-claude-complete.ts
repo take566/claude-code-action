@@ -4,6 +4,7 @@ import * as core from "@actions/core";
 import { reportClaudeComplete } from "../modes/remote-agent/system-progress-handler";
 import type { SystemProgressConfig } from "../modes/remote-agent/progress-types";
 import type { StreamConfig } from "../types/stream-config";
+import { commitUncommittedChanges } from "../github/utils/git-common-utils";
 
 async function run() {
   try {
@@ -70,6 +71,42 @@ async function run() {
       `Reporting Claude completion: exitCode=${exitCode}, duration=${durationMs}ms`,
     );
     reportClaudeComplete(systemProgressConfig, oidcToken, exitCode, durationMs);
+
+    // Ensure that uncommitted changes are committed
+    const claudeBranch = process.env.CLAUDE_BRANCH;
+    const useCommitSigning = process.env.USE_COMMIT_SIGNING === "true";
+    const githubToken = process.env.GITHUB_TOKEN;
+
+    // Parse repository from GITHUB_REPOSITORY (format: owner/repo)
+    const repository = process.env.GITHUB_REPOSITORY;
+    if (!repository) {
+      console.log("No GITHUB_REPOSITORY available, skipping branch cleanup");
+      return;
+    }
+
+    const [repoOwner, repoName] = repository.split("/");
+
+    if (claudeBranch && githubToken && repoOwner && repoName) {
+      console.log(`Checking for uncommitted changes in remote-agent mode...`);
+
+      try {
+        const commitResult = await commitUncommittedChanges(
+          repoOwner,
+          repoName,
+          claudeBranch,
+          useCommitSigning,
+        );
+
+        if (commitResult) {
+          console.log(`Committed uncommitted changes: ${commitResult.sha}`);
+        } else {
+          console.log("No uncommitted changes found");
+        }
+      } catch (error) {
+        // Don't fail the action if commit fails
+        core.warning(`Failed to commit changes: ${error}`);
+      }
+    }
   } catch (error) {
     // Don't fail the action if reporting fails
     core.warning(`Failed to report Claude completion: ${error}`);

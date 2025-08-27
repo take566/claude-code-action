@@ -12,6 +12,9 @@ import fetch from "node-fetch";
 import { GITHUB_API_URL } from "../github/api/config";
 import { retryWithBackoff } from "../utils/retry";
 
+// NOTE: We should extract out common git utilities into a shared module
+// as we need to perform these operations outside of an MCP server. (See git-common-utils.ts)
+
 const execFileAsync = promisify(execFile);
 
 type GitHubRef = {
