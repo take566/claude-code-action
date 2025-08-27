@@ -7,7 +7,10 @@ import * as core from "@actions/core";
 import type { GitHubContext } from "../../github/context";
 import type { Octokits } from "../../github/api/client";
 import type { ResumeResponse, ResumeResult } from "../../types/resume";
-import { setupBranch as setupBaseBranch, type BranchInfo } from "../../github/operations/branch";
+import {
+  setupBranch as setupBaseBranch,
+  type BranchInfo,
+} from "../../github/operations/branch";
 
 export type RemoteBranchInfo = BranchInfo & {
   resumeMessages?: ResumeResult["messages"];
@@ -25,7 +28,7 @@ async function fetchResumeData(
 ): Promise<ResumeResult | null> {
   try {
     console.log(`Attempting to resume from: ${resumeEndpoint}`);
-    
+
     const response = await fetch(resumeEndpoint, {
       method: "GET",
       headers: headers || {},
@@ -39,7 +42,7 @@ async function fetchResumeData(
     }
 
     const data = (await response.json()) as ResumeResponse;
-    
+
     if (!data.log || !Array.isArray(data.log)) {
       console.log("Resume endpoint returned invalid data structure");
       return null;
@@ -48,11 +51,11 @@ async function fetchResumeData(
     console.log(
       `Successfully fetched resume data with ${data.log.length} messages`,
     );
-    
+
     // If a branch is specified in the response, we'll use it
     // Otherwise, we'll determine the branch from the current git state
     const branchName = data.branch || "";
-    
+
     return {
       messages: data.log,
       branchName,
@@ -81,31 +84,31 @@ export async function setupBranchWithResume(
   // Check if we have a resume endpoint
   if (context.progressTracking?.resumeEndpoint) {
     console.log("Resume endpoint detected, attempting to resume session...");
-    
+
     // Prepare headers with OIDC token
     const headers: Record<string, string> = {
       ...(context.progressTracking.headers || {}),
       Authorization: `Bearer ${oidcToken}`,
     };
-    
+
     const resumeData = await fetchResumeData(
       context.progressTracking.resumeEndpoint,
       headers,
     );
-    
+
     if (resumeData && resumeData.branchName) {
       // Try to checkout the resumed branch
       try {
         console.log(`Resuming on branch: ${resumeData.branchName}`);
-        
+
         // Fetch the branch from origin
         await $`git fetch origin ${resumeData.branchName}`;
-        
+
         // Checkout the branch
         await $`git checkout ${resumeData.branchName}`;
-        
+
         console.log(`Successfully resumed on branch: ${resumeData.branchName}`);
-        
+
         // Get the base branch for this branch (we'll use the default branch as fallback)
         let resumeBaseBranch = baseBranch;
         if (!resumeBaseBranch) {
@@ -115,11 +118,11 @@ export async function setupBranchWithResume(
           });
           resumeBaseBranch = repoResponse.data.default_branch;
         }
-        
+
         // Set outputs for GitHub Actions
         core.setOutput("CLAUDE_BRANCH", resumeData.branchName);
         core.setOutput("BASE_BRANCH", resumeBaseBranch);
-        
+
         return {
           baseBranch: resumeBaseBranch,
           claudeBranch: resumeData.branchName,
