@@ -11,6 +11,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          repository: km-anthropic/claude-code-action
           ref: pr-492  # Test the PR branch
       
       - name: Create test issue comment
