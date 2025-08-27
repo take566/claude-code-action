@@ -4,7 +4,6 @@ import type { Mode, ModeOptions, ModeResult } from "../types";
 import { isRepositoryDispatchEvent } from "../../github/context";
 import type { GitHubContext } from "../../github/context";
 import { setupBranchWithResume } from "./branch";
-import { configureGitAuth } from "../../github/operations/git-config";
 import { prepareMcpConfig } from "../../mcp/install-mcp-server";
 import { GITHUB_SERVER_URL } from "../../github/api/config";
 import {
