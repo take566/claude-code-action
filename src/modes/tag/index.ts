@@ -125,6 +125,9 @@ export const tagMode: Mode = {
       "Read",
       "Write",
       "mcp__github_comment__update_claude_comment",
+      "mcp__github_ci__get_ci_status",
+      "mcp__github_ci__get_workflow_run_details",
+      "mcp__github_ci__download_job_log",
     ];
 
     // Add git commands when not using commit signing
