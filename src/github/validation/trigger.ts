@@ -12,9 +12,22 @@ import {
 import type { ParsedGitHubContext } from "../context";
 
 export function checkContainsTrigger(context: ParsedGitHubContext): boolean {
+  console.log("checkContainsTrigger called with context:", {
+    eventName: context.eventName,
+    eventAction: context.eventAction,
+    inputs: context.inputs,
+  });
+
   const {
     inputs: { assigneeTrigger, labelTrigger, triggerPhrase, prompt },
   } = context;
+
+  console.log("Extracted inputs:", {
+    assigneeTrigger,
+    labelTrigger,
+    triggerPhrase,
+    prompt,
+  });
 
   // If prompt is provided, always trigger
   if (prompt) {
@@ -46,15 +59,21 @@ export function checkContainsTrigger(context: ParsedGitHubContext): boolean {
 
   // Check for issue body and title trigger on issue creation
   if (isIssuesEvent(context) && context.eventAction === "opened") {
+    console.log("Checking issue opened trigger");
     const issueBody = context.payload.issue.body || "";
     const issueTitle = context.payload.issue.title || "";
+    console.log("Issue content:", { issueBody, issueTitle });
+
     // Check for exact match with word boundaries or punctuation
     const regex = new RegExp(
       `(^|\\s)${escapeRegExp(triggerPhrase)}([\\s.,!?;:]|$)`,
     );
+    console.log("Regex pattern:", regex.toString());
 
     // Check in body
-    if (regex.test(issueBody)) {
+    const bodyMatch = regex.test(issueBody);
+    console.log("Body match result:", bodyMatch);
+    if (bodyMatch) {
       console.log(
         `Issue body contains exact trigger phrase '${triggerPhrase}'`,
       );
@@ -62,7 +81,9 @@ export function checkContainsTrigger(context: ParsedGitHubContext): boolean {
     }
 
     // Check in title
-    if (regex.test(issueTitle)) {
+    const titleMatch = regex.test(issueTitle);
+    console.log("Title match result:", titleMatch);
+    if (titleMatch) {
       console.log(
         `Issue title contains exact trigger phrase '${triggerPhrase}'`,
       );
@@ -133,6 +154,7 @@ export function checkContainsTrigger(context: ParsedGitHubContext): boolean {
   }
 
   console.log(`No trigger was met for ${triggerPhrase}`);
+  console.log("Returning false from checkContainsTrigger");
 
   return false;
 }

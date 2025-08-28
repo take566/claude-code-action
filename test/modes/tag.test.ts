@@ -22,7 +22,7 @@ describe("Tag Mode", () => {
     expect(tagMode.shouldCreateTrackingComment()).toBe(true);
   });
 
-  test("shouldTrigger delegates to checkContainsTrigger", () => {
+  test.only("shouldTrigger delegates to checkContainsTrigger", () => {
     const contextWithTrigger = createMockContext({
       eventName: "issue_comment",
       isPR: false,

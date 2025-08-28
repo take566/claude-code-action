@@ -24,11 +24,16 @@ export const tagMode: Mode = {
   description: "Traditional implementation mode triggered by @claude mentions",
 
   shouldTrigger(context) {
+    console.log("tagMode.shouldTrigger called");
     // Tag mode only handles entity events
     if (!isEntityContext(context)) {
+      console.log("Not entity context, returning false");
       return false;
     }
-    return checkContainsTrigger(context);
+    console.log("Is entity context, calling checkContainsTrigger");
+    const result = checkContainsTrigger(context);
+    console.log("checkContainsTrigger returned:", result);
+    return result;
   },
 
   prepareContext(context, data) {
