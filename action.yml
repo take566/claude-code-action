@@ -74,7 +74,7 @@ inputs:
     required: false
     default: "false"
   track_progress:
-    description: "Force tag mode with tracking comments for pull_request and issue events. Only applicable to pull_request (opened, synchronize, ready_for_review, reopened) and issue (opened, edited, labeled, assigned) events."
+    description: "Force tag mode with tracking comments for pull_request and issue events"
     required: false
     default: "false"
   experimental_allowed_domains:
