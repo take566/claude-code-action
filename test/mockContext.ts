@@ -19,6 +19,7 @@ const defaultInputs = {
   useStickyComment: false,
   useCommitSigning: false,
   allowedBots: "",
+  trackProgress: false,
 };
 
 const defaultRepository = {

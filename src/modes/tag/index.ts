@@ -177,7 +177,18 @@ export const tagMode: Mode = {
     githubData: FetchDataResult,
     useCommitSigning: boolean,
   ): string {
-    return generateDefaultPrompt(context, githubData, useCommitSigning);
+    const defaultPrompt = generateDefaultPrompt(context, githubData, useCommitSigning);
+    
+    // If a custom prompt is provided, inject it into the tag mode prompt
+    if (context.githubContext?.inputs?.prompt) {
+      return defaultPrompt + `
+
+<custom_instructions>
+${context.githubContext.inputs.prompt}
+</custom_instructions>`;
+    }
+    
+    return defaultPrompt;
   },
 
   getSystemPrompt() {

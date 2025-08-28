@@ -99,4 +99,5 @@ export type EventData =
 // Combined type with separate eventData field
 export type PreparedContext = CommonFields & {
   eventData: EventData;
+  githubContext?: import("../github/context").GitHubContext;
 };
