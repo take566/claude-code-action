@@ -52,7 +52,12 @@ export function detectMode(context: GitHubContext): AutoDetectedMode {
 
   // PR events (opened, synchronize, etc.)
   if (isEntityContext(context) && isPullRequestEvent(context)) {
-    const supportedActions = ["opened", "synchronize", "ready_for_review", "reopened"];
+    const supportedActions = [
+      "opened",
+      "synchronize",
+      "ready_for_review",
+      "reopened",
+    ];
     if (context.eventAction && supportedActions.includes(context.eventAction)) {
       // If prompt is provided, use agent mode (default for automation)
       if (context.inputs.prompt) {
@@ -82,17 +87,22 @@ function validateTrackProgressEvent(context: GitHubContext): void {
   if (!validEvents.includes(context.eventName)) {
     throw new Error(
       `track_progress is only supported for pull_request and issue events. ` +
-      `Current event: ${context.eventName}`
+        `Current event: ${context.eventName}`,
     );
   }
-  
+
   // Additionally validate PR actions
   if (context.eventName === "pull_request" && context.eventAction) {
-    const validActions = ["opened", "synchronize", "ready_for_review", "reopened"];
+    const validActions = [
+      "opened",
+      "synchronize",
+      "ready_for_review",
+      "reopened",
+    ];
     if (!validActions.includes(context.eventAction)) {
       throw new Error(
         `track_progress for pull_request events is only supported for actions: ` +
-        `${validActions.join(", ")}. Current action: ${context.eventAction}`
+          `${validActions.join(", ")}. Current action: ${context.eventAction}`,
       );
     }
   }

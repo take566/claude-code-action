@@ -13,27 +13,31 @@ import { isEntityContext } from "../../github/context";
  */
 function extractGitHubContext(context: GitHubContext): Record<string, string> {
   const envVars: Record<string, string> = {};
-  
+
   // Basic repository info
   envVars.GITHUB_REPOSITORY = context.repository.full_name;
   envVars.GITHUB_TRIGGER_ACTOR = context.actor;
   envVars.GITHUB_EVENT_NAME = context.eventName;
-  
+
   // Entity-specific context (PR/issue numbers, branches, etc.)
   if (isEntityContext(context)) {
     if (context.isPR) {
       envVars.GITHUB_PR_NUMBER = String(context.entityNumber);
-      
+
       // Extract branch info from payload if available
-      if (context.payload && 'pull_request' in context.payload && context.payload.pull_request) {
-        envVars.GITHUB_BASE_REF = context.payload.pull_request.base?.ref || '';
-        envVars.GITHUB_HEAD_REF = context.payload.pull_request.head?.ref || '';
+      if (
+        context.payload &&
+        "pull_request" in context.payload &&
+        context.payload.pull_request
+      ) {
+        envVars.GITHUB_BASE_REF = context.payload.pull_request.base?.ref || "";
+        envVars.GITHUB_HEAD_REF = context.payload.pull_request.head?.ref || "";
       }
     } else {
       envVars.GITHUB_ISSUE_NUMBER = String(context.entityNumber);
     }
   }
-  
+
   return envVars;
 }
 

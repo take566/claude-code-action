@@ -79,7 +79,9 @@ describe("detectMode with enhanced routing", () => {
         inputs: { ...baseContext.inputs, trackProgress: true },
       };
 
-      expect(() => detectMode(context)).toThrow(/track_progress for pull_request events is only supported for actions/);
+      expect(() => detectMode(context)).toThrow(
+        /track_progress for pull_request events is only supported for actions/,
+      );
     });
   });
 
@@ -118,9 +120,9 @@ describe("detectMode with enhanced routing", () => {
       const context: GitHubContext = {
         ...baseContext,
         eventName: "issue_comment",
-        payload: { 
+        payload: {
           issue: { number: 1, body: "Test" },
-          comment: { body: "@claude help" }
+          comment: { body: "@claude help" },
         } as any,
         entityNumber: 1,
         isPR: false,
@@ -133,9 +135,9 @@ describe("detectMode with enhanced routing", () => {
       const context: GitHubContext = {
         ...baseContext,
         eventName: "issue_comment",
-        payload: { 
+        payload: {
           issue: { number: 1, body: "Test" },
-          comment: { body: "@claude help" }
+          comment: { body: "@claude help" },
         } as any,
         entityNumber: 1,
         isPR: false,
@@ -149,9 +151,9 @@ describe("detectMode with enhanced routing", () => {
       const context: GitHubContext = {
         ...baseContext,
         eventName: "pull_request_review_comment",
-        payload: { 
+        payload: {
           pull_request: { number: 1, body: "Test" },
-          comment: { body: "@claude check this" }
+          comment: { body: "@claude check this" },
         } as any,
         entityNumber: 1,
         isPR: true,
@@ -170,7 +172,9 @@ describe("detectMode with enhanced routing", () => {
         inputs: { ...baseContext.inputs, trackProgress: true },
       };
 
-      expect(() => detectMode(context)).toThrow(/track_progress is only supported for pull_request and issue events/);
+      expect(() => detectMode(context)).toThrow(
+        /track_progress is only supported for pull_request and issue events/,
+      );
     });
 
     it("should use agent mode for workflow_dispatch without track_progress", () => {
@@ -194,10 +198,10 @@ describe("detectMode with enhanced routing", () => {
         payload: { pull_request: { number: 1 } } as any,
         entityNumber: 1,
         isPR: true,
-        inputs: { 
-          ...baseContext.inputs, 
+        inputs: {
+          ...baseContext.inputs,
           trackProgress: true,
-          prompt: "Review for security issues"
+          prompt: "Review for security issues",
         },
       };
 
@@ -212,10 +216,10 @@ describe("detectMode with enhanced routing", () => {
         payload: { issue: { number: 1, body: "Test" } } as any,
         entityNumber: 1,
         isPR: false,
-        inputs: { 
-          ...baseContext.inputs, 
+        inputs: {
+          ...baseContext.inputs,
           trackProgress: true,
-          prompt: "Analyze this issue"
+          prompt: "Analyze this issue",
         },
       };
 
