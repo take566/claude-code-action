@@ -59,6 +59,7 @@ function filterCommentsToTriggerTime<
     // Comment must have been created before trigger
     const createdTimestamp = new Date(comment.createdAt).getTime();
     if (createdTimestamp > triggerTimestamp) {
+      console.log("filtering", comment);
       return false;
     }
 
