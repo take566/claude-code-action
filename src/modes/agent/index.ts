@@ -118,6 +118,7 @@ export const agentMode: Mode = {
             login: authenticatedUser.login,
             id: authenticatedUser.id,
           };
+          console.log("yolo user auth", user);
         } catch (error: any) {
           // Check if this is a GitHub App token limitation
           if (
