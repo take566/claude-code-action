@@ -7,6 +7,7 @@ import { parseAllowedTools } from "./parse-tools";
 import { configureGitAuth } from "../../github/operations/git-config";
 import type { GitHubContext } from "../../github/context";
 import { isEntityContext } from "../../github/context";
+import { GITHUB_ACTIONS_BOT_ID } from "../../github/constants";
 
 /**
  * Extract GitHub context as environment variables for agent mode
@@ -88,7 +89,7 @@ export const agentMode: Mode = {
 
       // Check if bot_id is provided
       const botId = context.inputs.botId;
-      if (botId && botId !== "41898282") {
+      if (botId && botId !== String(GITHUB_ACTIONS_BOT_ID)) {
         // Use custom bot_id - try to fetch user info
         try {
           const { data: userData } = await octokit.rest.users.getByUsername({

@@ -8,6 +8,7 @@
 import { $ } from "bun";
 import type { GitHubContext } from "../context";
 import { GITHUB_SERVER_URL } from "../api/config";
+import { GITHUB_ACTIONS_BOT_ID, GITHUB_ACTIONS_BOT_LOGIN } from "../constants";
 
 type GitUser = {
   login: string;
@@ -39,8 +40,8 @@ export async function configureGitAuth(
     console.log(`✓ Set git user as ${botName}`);
   } else {
     console.log("No user data in comment, using default bot user");
-    await $`git config user.name "github-actions[bot]"`;
-    await $`git config user.email "41898282+github-actions[bot]@${noreplyDomain}"`;
+    await $`git config user.name "${GITHUB_ACTIONS_BOT_LOGIN}"`;
+    await $`git config user.email "${GITHUB_ACTIONS_BOT_ID}+${GITHUB_ACTIONS_BOT_LOGIN}@${noreplyDomain}"`;
   }
 
   // Remove the authorization header that actions/checkout sets

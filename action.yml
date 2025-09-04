@@ -76,7 +76,7 @@ inputs:
   bot_id:
     description: "GitHub user ID to use for git operations when authenticated user cannot be fetched (defaults to github-actions[bot] ID)"
     required: false
-    default: "41898282"
+    default: "41898282" # github-actions[bot] ID - see src/github/constants.ts
   track_progress:
     description: "Force tag mode with tracking comments for pull_request and issue events. Only applicable to pull_request (opened, synchronize, ready_for_review, reopened) and issue (opened, edited, labeled, assigned) events."
     required: false
