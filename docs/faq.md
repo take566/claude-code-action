@@ -32,9 +32,9 @@ The OIDC token is required in order for the Claude GitHub app to function. If yo
 
 This error occurs when the action tries to fetch the authenticated user information using a GitHub App installation token. GitHub App tokens have limited access and cannot access the `/user` endpoint, which causes this 403 error.
 
-**Solution**: The action now includes `bot_id` and `bot_name` inputs that default to github-actions[bot]. This avoids the need to fetch user information from the API.
+**Solution**: The action now includes `bot_id` and `bot_name` inputs that default to Claude's bot credentials. This avoids the need to fetch user information from the API.
 
-For the default github-actions[bot]:
+For the default claude[bot]:
 
 ```yaml
 - uses: anthropics/claude-code-action@v1

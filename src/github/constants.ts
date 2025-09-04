@@ -8,6 +8,6 @@
 export const CLAUDE_APP_BOT_ID = 41898282;
 
 /**
- * GitHub Actions bot username
+ * Claude bot username
  */
-export const GITHUB_ACTIONS_BOT_LOGIN = "github-actions[bot]";
+export const CLAUDE_BOT_LOGIN = "claude[bot]";

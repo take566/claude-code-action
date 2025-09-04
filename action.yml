@@ -74,13 +74,13 @@ inputs:
     required: false
     default: "false"
   bot_id:
-    description: "GitHub user ID to use for git operations (defaults to github-actions[bot] ID)"
+    description: "GitHub user ID to use for git operations (defaults to Claude's bot ID)"
     required: false
-    default: "41898282" # github-actions[bot] ID - see src/github/constants.ts
+    default: "41898282" # Claude's bot ID - see src/github/constants.ts
   bot_name:
-    description: "GitHub username to use for git operations (defaults to github-actions[bot])"
+    description: "GitHub username to use for git operations (defaults to Claude's bot name)"
     required: false
-    default: "github-actions[bot]"
+    default: "claude[bot]"
   track_progress:
     description: "Force tag mode with tracking comments for pull_request and issue events. Only applicable to pull_request (opened, synchronize, ready_for_review, reopened) and issue (opened, edited, labeled, assigned) events."
     required: false
