@@ -32,13 +32,25 @@ The OIDC token is required in order for the Claude GitHub app to function. If yo
 
 This error occurs when the action tries to fetch the authenticated user information using a GitHub App installation token. GitHub App tokens have limited access and cannot access the `/user` endpoint, which causes this 403 error.
 
-**Solution**: The action now includes a `bot_id` input that defaults to the github-actions[bot] ID (41898282). This avoids the need to fetch user information. If you need to use a different bot user, you can specify a custom bot_id:
+**Solution**: The action now includes `bot_id` and `bot_name` inputs that default to github-actions[bot]. This avoids the need to fetch user information from the API.
+
+For the default github-actions[bot]:
 
 ```yaml
 - uses: anthropics/claude-code-action@v1
   with:
     anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-    bot_id: "12345678" # Custom bot user ID
+    # bot_id and bot_name have sensible defaults, no need to specify
+```
+
+For custom bots, specify both:
+
+```yaml
+- uses: anthropics/claude-code-action@v1
+  with:
+    anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+    bot_id: "12345678" # Your bot's GitHub user ID
+    bot_name: "my-bot" # Your bot's username
 ```
 
 This issue typically only affects agent/automation mode workflows. Interactive workflows (with @claude mentions) don't encounter this issue as they use the comment author's information.

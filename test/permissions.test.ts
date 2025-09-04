@@ -2,7 +2,10 @@ import { describe, expect, test, spyOn, beforeEach, afterEach } from "bun:test";
 import * as core from "@actions/core";
 import { checkWritePermissions } from "../src/github/validation/permissions";
 import type { ParsedGitHubContext } from "../src/github/context";
-import { GITHUB_ACTIONS_BOT_ID } from "../src/github/constants";
+import {
+  CLAUDE_APP_BOT_ID,
+  GITHUB_ACTIONS_BOT_LOGIN,
+} from "../src/github/constants";
 
 describe("checkWritePermissions", () => {
   let coreInfoSpy: any;
@@ -68,7 +71,8 @@ describe("checkWritePermissions", () => {
       branchPrefix: "claude/",
       useStickyComment: false,
       useCommitSigning: false,
-      botId: String(GITHUB_ACTIONS_BOT_ID),
+      botId: String(CLAUDE_APP_BOT_ID),
+      botName: GITHUB_ACTIONS_BOT_LOGIN,
       allowedBots: "",
       trackProgress: false,
     },

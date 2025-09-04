@@ -9,7 +9,10 @@ import type {
   PullRequestReviewEvent,
   PullRequestReviewCommentEvent,
 } from "@octokit/webhooks-types";
-import { GITHUB_ACTIONS_BOT_ID } from "../src/github/constants";
+import {
+  CLAUDE_APP_BOT_ID,
+  GITHUB_ACTIONS_BOT_LOGIN,
+} from "../src/github/constants";
 
 const defaultInputs = {
   prompt: "",
@@ -19,7 +22,8 @@ const defaultInputs = {
   branchPrefix: "claude/",
   useStickyComment: false,
   useCommitSigning: false,
-  botId: String(GITHUB_ACTIONS_BOT_ID),
+  botId: String(CLAUDE_APP_BOT_ID),
+  botName: GITHUB_ACTIONS_BOT_LOGIN,
   allowedBots: "",
   trackProgress: false,
 };

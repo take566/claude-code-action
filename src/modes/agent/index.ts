@@ -7,7 +7,6 @@ import { parseAllowedTools } from "./parse-tools";
 import { configureGitAuth } from "../../github/operations/git-config";
 import type { GitHubContext } from "../../github/context";
 import { isEntityContext } from "../../github/context";
-import { GITHUB_ACTIONS_BOT_ID } from "../../github/constants";
 
 /**
  * Extract GitHub context as environment variables for agent mode
@@ -78,66 +77,14 @@ export const agentMode: Mode = {
     return false;
   },
 
-  async prepare({
-    context,
-    githubToken,
-    octokit,
-  }: ModeOptions): Promise<ModeResult> {
+  async prepare({ context, githubToken }: ModeOptions): Promise<ModeResult> {
     // Configure git authentication for agent mode (same as tag mode)
     if (!context.inputs.useCommitSigning) {
-      let user = null;
-
-      // Check if bot_id is provided
-      console.log("yolobot", context.inputs.botId);
-      const botId = context.inputs.botId;
-      if (botId && botId !== String(GITHUB_ACTIONS_BOT_ID)) {
-        // Use custom bot_id - try to fetch user info
-        try {
-          const { data: userData } = await octokit.rest.users.getByUsername({
-            username: context.actor,
-          });
-          user = {
-            login: userData.login,
-            id: userData.id,
-          };
-          console.log("yolo user", user);
-        } catch (error) {
-          console.log(
-            `Could not fetch user info for ${context.actor}, using bot_id ${botId}`,
-          );
-          user = {
-            login: context.actor,
-            id: parseInt(botId),
-          };
-        }
-      } else {
-        // Try to get authenticated user, but don't fail if using GitHub App token
-        try {
-          const { data: authenticatedUser } =
-            await octokit.rest.users.getAuthenticated();
-          user = {
-            login: authenticatedUser.login,
-            id: authenticatedUser.id,
-          };
-          console.log("yolo user auth", user);
-        } catch (error: any) {
-          // Check if this is a GitHub App token limitation
-          if (
-            error?.status === 403 &&
-            error?.message?.includes("Resource not accessible by integration")
-          ) {
-            console.log(
-              "Using GitHub App token - defaulting to github-actions[bot] for git operations",
-            );
-          } else {
-            console.error(
-              "Failed to get authenticated user:",
-              error?.message || error,
-            );
-          }
-          // User will remain null, which will trigger default behavior in configureGitAuth
-        }
-      }
+      // Use bot_id and bot_name from inputs directly
+      const user = {
+        login: context.inputs.botName,
+        id: parseInt(context.inputs.botId),
+      };
 
       try {
         // Use the shared git configuration function

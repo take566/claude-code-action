@@ -2,7 +2,10 @@ import { describe, test, expect, beforeEach, afterEach, spyOn } from "bun:test";
 import { prepareMcpConfig } from "../src/mcp/install-mcp-server";
 import * as core from "@actions/core";
 import type { ParsedGitHubContext } from "../src/github/context";
-import { GITHUB_ACTIONS_BOT_ID } from "../src/github/constants";
+import {
+  CLAUDE_APP_BOT_ID,
+  GITHUB_ACTIONS_BOT_LOGIN,
+} from "../src/github/constants";
 
 describe("prepareMcpConfig", () => {
   let consoleInfoSpy: any;
@@ -32,7 +35,8 @@ describe("prepareMcpConfig", () => {
       branchPrefix: "",
       useStickyComment: false,
       useCommitSigning: false,
-      botId: String(GITHUB_ACTIONS_BOT_ID),
+      botId: String(CLAUDE_APP_BOT_ID),
+      botName: GITHUB_ACTIONS_BOT_LOGIN,
       allowedBots: "",
       trackProgress: false,
     },

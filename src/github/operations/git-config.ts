@@ -8,7 +8,6 @@
 import { $ } from "bun";
 import type { GitHubContext } from "../context";
 import { GITHUB_SERVER_URL } from "../api/config";
-import { GITHUB_ACTIONS_BOT_ID, GITHUB_ACTIONS_BOT_LOGIN } from "../constants";
 
 type GitUser = {
   login: string;
@@ -18,7 +17,7 @@ type GitUser = {
 export async function configureGitAuth(
   githubToken: string,
   context: GitHubContext,
-  user: GitUser | null,
+  user: GitUser,
 ) {
   console.log("Configuring git authentication for non-signing mode");
 
@@ -29,20 +28,14 @@ export async function configureGitAuth(
       ? "users.noreply.github.com"
       : `users.noreply.${serverUrl.hostname}`;
 
-  // Configure git user based on the comment creator
+  // Configure git user
   console.log("Configuring git user...");
-  if (user) {
-    const botName = user.login;
-    const botId = user.id;
-    console.log(`Setting git user as ${botName}...`);
-    await $`git config user.name "${botName}"`;
-    await $`git config user.email "${botId}+${botName}@${noreplyDomain}"`;
-    console.log(`✓ Set git user as ${botName}`);
-  } else {
-    console.log("No user data in comment, using default bot user");
-    await $`git config user.name "${GITHUB_ACTIONS_BOT_LOGIN}"`;
-    await $`git config user.email "${GITHUB_ACTIONS_BOT_ID}+${GITHUB_ACTIONS_BOT_LOGIN}@${noreplyDomain}"`;
-  }
+  const botName = user.login;
+  const botId = user.id;
+  console.log(`Setting git user as ${botName}...`);
+  await $`git config user.name "${botName}"`;
+  await $`git config user.email "${botId}+${botName}@${noreplyDomain}"`;
+  console.log(`✓ Set git user as ${botName}`);
 
   // Remove the authorization header that actions/checkout sets
   console.log("Removing existing git authentication headers...");
