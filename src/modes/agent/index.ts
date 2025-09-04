@@ -88,6 +88,7 @@ export const agentMode: Mode = {
       let user = null;
 
       // Check if bot_id is provided
+      console.log("yolobot", context.inputs.botId);
       const botId = context.inputs.botId;
       if (botId && botId !== String(GITHUB_ACTIONS_BOT_ID)) {
         // Use custom bot_id - try to fetch user info
