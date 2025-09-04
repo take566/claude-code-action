@@ -18,6 +18,7 @@ const defaultInputs = {
   branchPrefix: "claude/",
   useStickyComment: false,
   useCommitSigning: false,
+  botId: "41898282",
   allowedBots: "",
   trackProgress: false,
 };

@@ -84,15 +84,58 @@ export const agentMode: Mode = {
   }: ModeOptions): Promise<ModeResult> {
     // Configure git authentication for agent mode (same as tag mode)
     if (!context.inputs.useCommitSigning) {
-      try {
-        // Get the authenticated user (will be claude[bot] when using Claude App token)
-        const { data: authenticatedUser } =
-          await octokit.rest.users.getAuthenticated();
-        const user = {
-          login: authenticatedUser.login,
-          id: authenticatedUser.id,
-        };
+      let user = null;
 
+      // Check if bot_id is provided
+      const botId = context.inputs.botId;
+      if (botId && botId !== "41898282") {
+        // Use custom bot_id - try to fetch user info
+        try {
+          const { data: userData } = await octokit.rest.users.getByUsername({
+            username: context.actor,
+          });
+          user = {
+            login: userData.login,
+            id: userData.id,
+          };
+        } catch (error) {
+          console.log(
+            `Could not fetch user info for ${context.actor}, using bot_id ${botId}`,
+          );
+          user = {
+            login: context.actor,
+            id: parseInt(botId),
+          };
+        }
+      } else {
+        // Try to get authenticated user, but don't fail if using GitHub App token
+        try {
+          const { data: authenticatedUser } =
+            await octokit.rest.users.getAuthenticated();
+          user = {
+            login: authenticatedUser.login,
+            id: authenticatedUser.id,
+          };
+        } catch (error: any) {
+          // Check if this is a GitHub App token limitation
+          if (
+            error?.status === 403 &&
+            error?.message?.includes("Resource not accessible by integration")
+          ) {
+            console.log(
+              "Using GitHub App token - defaulting to github-actions[bot] for git operations",
+            );
+          } else {
+            console.error(
+              "Failed to get authenticated user:",
+              error?.message || error,
+            );
+          }
+          // User will remain null, which will trigger default behavior in configureGitAuth
+        }
+      }
+
+      try {
         // Use the shared git configuration function
         await configureGitAuth(githubToken, context, user);
       } catch (error) {
