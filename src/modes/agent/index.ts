@@ -99,6 +99,7 @@ export const agentMode: Mode = {
             login: userData.login,
             id: userData.id,
           };
+          console.log("yolo user", user);
         } catch (error) {
           console.log(
             `Could not fetch user info for ${context.actor}, using bot_id ${botId}`,
