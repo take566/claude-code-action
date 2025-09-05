@@ -102,6 +102,7 @@ jobs:
           prompt: $(cat /tmp/claude-prompts/triage-prompt.txt)
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
+          allowed_non_write_users: "*"
           claude_args: |
             --allowedTools Bash(gh label list),mcp__github__get_issue,mcp__github__get_issue_comments,mcp__github__update_issue,mcp__github__search_issues,mcp__github__list_issues
             --mcp-config /tmp/mcp-config/mcp-servers.json

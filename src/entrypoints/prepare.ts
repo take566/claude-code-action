@@ -30,9 +30,13 @@ async function run() {
 
     // Step 3: Check write permissions (only for entity contexts)
     if (isEntityContext(context)) {
+      // Check if github_token was provided as input (not from app)
+      const githubTokenProvided = !!process.env.OVERRIDE_GITHUB_TOKEN;
       const hasWritePermissions = await checkWritePermissions(
         octokit.rest,
         context,
+        context.inputs.allowedNonWriteUsers,
+        githubTokenProvided,
       );
       if (!hasWritePermissions) {
         throw new Error(
