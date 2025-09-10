@@ -81,10 +81,21 @@ describe("Trigger Validation", () => {
       expect(result).toBe(true);
     });
 
+    test("should handle null/undefined comment body", () => {
+      const contextNull = createMockContext({
+        payload: { comment: { body: null } },
+      });
+      const contextUndefined = createMockContext({
+        payload: { comment: { body: undefined } },
+      });
+      
+      expect(checkContainsTrigger(contextNull)).toBe(false);
+      expect(checkContainsTrigger(contextUndefined)).toBe(false);
+    });
+
     test("should handle empty comment body", () => {
-      // Subtle issue 5: Not checking null vs undefined
       const context = createMockContext({
-        comment: { body: "" },
+        payload: { comment: { body: "" } },
       });
       
       const result = checkContainsTrigger(context);
