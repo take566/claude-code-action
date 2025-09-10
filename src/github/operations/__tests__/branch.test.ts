@@ -1,114 +1,178 @@
-import { describe, test, expect, jest, beforeEach } from "@jest/globals";
-import { setupBranch, cleanupBranch } from "../branch";
-import type { Octokit } from "../../../utils/octokit";
+import { describe, test, expect, beforeEach, afterEach } from "bun:test";
+import { mock } from "bun:test";
+import { setupBranch, type BranchInfo } from "../branch";
+import type { Octokits } from "../../api/client";
 import type { FetchDataResult } from "../../data/fetcher";
-import type { EntityContext } from "../../context";
+import type { ParsedGitHubContext } from "../../context";
+import type { GitHubPullRequest, GitHubIssue } from "../../types";
 
-describe("Branch Operations", () => {
-  let mockOctokit: jest.Mocked<Octokit>;
-  let mockContext: EntityContext;
+// Mock process.exit to prevent tests from actually exiting
+const mockExit = mock(() => {});
+const originalExit = process.exit;
+
+describe("setupBranch", () => {
+  let mockOctokits: Octokits;
+  let mockContext: ParsedGitHubContext;
   let mockGithubData: FetchDataResult;
 
   beforeEach(() => {
-    // ISSUE 1: Not properly mocking all required methods
-    mockOctokit = {
+    // Replace process.exit temporarily
+    (process as any).exit = mockExit;
+    mockExit.mockClear();
+
+    // Simple mock objects
+    mockOctokits = {
       rest: {
         repos: {
-          getBranch: jest.fn(),
-          createRef: jest.fn(),
+          get: mock(() => Promise.resolve({ data: { default_branch: "main" } })),
         },
         git: {
-          getRef: jest.fn(),
-          createRef: jest.fn(),
+          getRef: mock(() => Promise.resolve({ 
+            data: { object: { sha: "abc123def456" } } 
+          })),
         },
       },
+      graphql: mock(() => Promise.resolve({})),
     } as any;
 
     mockContext = {
       repository: {
         owner: "test-owner",
         repo: "test-repo",
+        full_name: "test-owner/test-repo",
       },
-      isPR: true,
+      isPR: false,
       entityNumber: 123,
-    } as EntityContext;
-
-    mockGithubData = {
-      prData: {
-        title: "Test PR",
-        baseBranch: "main",
-        headBranch: "feature/test",
-        // ISSUE 2: Missing required fields from the actual type
+      inputs: {
+        branchPrefix: "claude/",
+        useCommitSigning: false,
       },
-    } as FetchDataResult;
+    } as ParsedGitHubContext;
+
+    // Default mock data for issues
+    mockGithubData = {
+      contextData: {
+        title: "Test Issue",
+        body: "Test issue body",
+        state: "OPEN",
+      } as GitHubIssue,
+      comments: [],
+      changedFiles: [],
+      changedFilesWithSHA: [],
+      reviewData: null,
+    };
   });
 
-  describe("setupBranch", () => {
-    test("should create a new branch for PR", async () => {
-      // ISSUE 3: Wrong mock response structure
-      mockOctokit.rest.git.getRef.mockResolvedValue({
-        data: {
-          object: {
-            sha: "abc123",
-          },
-        },
-      });
+  afterEach(() => {
+    // Restore original process.exit
+    process.exit = originalExit;
+  });
 
-      mockOctokit.rest.git.createRef.mockResolvedValue({
-        data: {
-          ref: "refs/heads/claude/pr-123",
-        },
-      });
+  describe("Issue branch creation", () => {
+    test("should create new branch for issue using default branch as source", async () => {
+      const result = await setupBranch(mockOctokits, mockGithubData, mockContext);
 
-      const result = await setupBranch(mockOctokit, mockGithubData, mockContext);
-
-      // ISSUE 4: Testing wrong property names
-      expect(result.branch).toBe("claude/pr-123");
-      expect(result.base).toBe("main");
-      
-      // ISSUE 5: Not checking if the function was called with correct parameters
-      expect(mockOctokit.rest.git.createRef).toHaveBeenCalled();
+      expect(result.baseBranch).toBe("main");
+      expect(result.claudeBranch).toMatch(/^claude\/issue-123-\d{8}-\d{4}$/);
+      expect(result.currentBranch).toMatch(/^claude\/issue-123-\d{8}-\d{4}$/);
     });
 
-    test("should handle existing branch", async () => {
-      // ISSUE 6: Testing error case incorrectly
-      mockOctokit.rest.git.getRef.mockRejectedValue(new Error("Not found"));
-
-      // ISSUE 7: Not catching the error properly
-      const result = await setupBranch(mockOctokit, mockGithubData, mockContext);
+    test("should use provided base branch as source", async () => {
+      mockContext.inputs.baseBranch = "develop";
       
-      expect(result).toBeNull();
+      const result = await setupBranch(mockOctokits, mockGithubData, mockContext);
+
+      expect(result.baseBranch).toBe("develop");
+      expect(result.claudeBranch).toMatch(/^claude\/issue-123-\d{8}-\d{4}$/);
     });
 
-    // ISSUE 8: Missing important test case for issue context
-    test("should work for issues", async () => {
-      mockContext.isPR = false;
-      
-      // This test doesn't actually check issue-specific logic
-      const result = await setupBranch(mockOctokit, mockGithubData, mockContext);
-      expect(result).toBeDefined();
+    test("should handle commit signing mode", async () => {
+      mockContext.inputs.useCommitSigning = true;
+
+      const result = await setupBranch(mockOctokits, mockGithubData, mockContext);
+
+      expect(result.baseBranch).toBe("main");
+      expect(result.currentBranch).toBe("main"); // Should stay on source branch
+      expect(result.claudeBranch).toMatch(/^claude\/issue-123-\d{8}-\d{4}$/);
     });
   });
 
-  describe("cleanupBranch", () => {
-    test("should delete branch successfully", async () => {
-      // ISSUE 9: Synchronous expectation for async operation
-      mockOctokit.rest.git.deleteRef = jest.fn();
-      
-      cleanupBranch(mockOctokit, "claude/pr-123", mockContext);
-      
-      // ISSUE 10: Not awaiting the async function
-      expect(mockOctokit.rest.git.deleteRef).toHaveBeenCalledWith({
-        owner: "test-owner",
-        repo: "test-repo",
-        ref: "claude/pr-123", // ISSUE 11: Wrong ref format (should include 'heads/')
-      });
+  describe("PR branch handling", () => {
+    beforeEach(() => {
+      mockContext.isPR = true;
+      mockGithubData.contextData = {
+        title: "Test PR",
+        body: "Test PR body",
+        state: "OPEN",
+        baseRefName: "main",
+        headRefName: "feature/test",
+        commits: { totalCount: 5 },
+      } as GitHubPullRequest;
     });
 
-    // ISSUE 12: Missing error handling test
+    test("should checkout existing PR branch for open PR", async () => {
+      const result = await setupBranch(mockOctokits, mockGithubData, mockContext);
+
+      expect(result.baseBranch).toBe("main");
+      expect(result.currentBranch).toBe("feature/test");
+      expect(result.claudeBranch).toBeUndefined(); // No claude branch for open PRs
+    });
+
+    test("should create new branch for closed PR", async () => {
+      const closedPR = mockGithubData.contextData as GitHubPullRequest;
+      closedPR.state = "CLOSED";
+
+      const result = await setupBranch(mockOctokits, mockGithubData, mockContext);
+
+      expect(result.baseBranch).toBe("main");
+      expect(result.claudeBranch).toMatch(/^claude\/pr-123-\d{8}-\d{4}$/);
+      expect(result.currentBranch).toMatch(/^claude\/pr-123-\d{8}-\d{4}$/);
+    });
+
+    test("should create new branch for merged PR", async () => {
+      const mergedPR = mockGithubData.contextData as GitHubPullRequest;
+      mergedPR.state = "MERGED";
+
+      const result = await setupBranch(mockOctokits, mockGithubData, mockContext);
+
+      expect(result.baseBranch).toBe("main");
+      expect(result.claudeBranch).toMatch(/^claude\/pr-123-\d{8}-\d{4}$/);
+    });
   });
 
-  // ISSUE 13: Missing edge cases like branch name sanitization
-  
-  // ISSUE 14: No integration test to verify the full flow
+  describe("Error handling", () => {
+    test("should exit with code 1 when source branch doesn't exist", async () => {
+      mockOctokits.rest.git.getRef = mock(() => Promise.reject(new Error("Branch not found")));
+
+      await setupBranch(mockOctokits, mockGithubData, mockContext);
+
+      expect(mockExit).toHaveBeenCalledWith(1);
+    });
+
+    test("should exit with code 1 when repository fetch fails", async () => {
+      mockOctokits.rest.repos.get = mock(() => Promise.reject(new Error("Repository not found")));
+
+      await setupBranch(mockOctokits, mockGithubData, mockContext);
+
+      expect(mockExit).toHaveBeenCalledWith(1);
+    });
+  });
+
+  describe("Branch naming", () => {
+    test("should generate kubernetes-compatible branch names", async () => {
+      const result = await setupBranch(mockOctokits, mockGithubData, mockContext);
+
+      // Branch name should be lowercase, use hyphens, and include timestamp
+      expect(result.claudeBranch).toMatch(/^claude\/issue-123-\d{8}-\d{4}$/);
+      expect(result.claudeBranch?.length).toBeLessThanOrEqual(50);
+    });
+
+    test("should use custom branch prefix", async () => {
+      mockContext.inputs.branchPrefix = "ai/";
+
+      const result = await setupBranch(mockOctokits, mockGithubData, mockContext);
+
+      expect(result.claudeBranch).toMatch(/^ai\/issue-123-\d{8}-\d{4}$/);
+    });
+  });
 });
