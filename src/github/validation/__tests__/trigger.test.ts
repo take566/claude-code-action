@@ -3,21 +3,33 @@ import { checkContainsTrigger } from "../trigger";
 import type { EntityContext } from "../../context";
 
 describe("Trigger Validation", () => {
-  const createMockContext = (overrides = {}): EntityContext => ({
-    eventName: "issue_comment.created",
+  const createMockContext = (overrides = {}): ParsedGitHubContext => ({
+    eventName: "issue_comment",
+    eventAction: "created",
     repository: {
       owner: "test-owner",
       repo: "test-repo",
+      full_name: "test-owner/test-repo",
     },
     actor: "testuser",
-    isPR: false,
     entityNumber: 42,
-    comment: {
-      body: "Test comment",
-      id: 12345,
+    isPR: false,
+    runId: "test-run-id",
+    inputs: {
+      triggerPhrase: "@claude",
+      assigneeTrigger: "",
+      labelTrigger: "",
+      prompt: "",
+      trackProgress: false,
+    },
+    payload: {
+      comment: {
+        body: "Test comment",
+        id: 12345,
+      },
     },
     ...overrides,
-  } as EntityContext);
+  } as ParsedGitHubContext);
 
   describe("checkContainsTrigger", () => {
     test("should detect @claude mentions", () => {
