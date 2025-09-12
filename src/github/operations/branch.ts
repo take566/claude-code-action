@@ -12,6 +12,7 @@ import type { ParsedGitHubContext } from "../context";
 import type { GitHubPullRequest } from "../types";
 import type { Octokits } from "../api/client";
 import type { FetchDataResult } from "../data/fetcher";
+import { generateBranchName } from "../../utils/branch-template";
 
 export type BranchInfo = {
   baseBranch: string;
@@ -87,18 +88,8 @@ export async function setupBranch(
   // Generate branch name for either an issue or closed/merged PR
   const entityType = isPR ? "pr" : "issue";
 
-  // Create Kubernetes-compatible timestamp: lowercase, hyphens only, shorter format
-  const now = new Date();
-  const timestamp = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}-${String(now.getHours()).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}`;
-
-  // Ensure branch name is Kubernetes-compatible:
-  // - Lowercase only
-  // - Alphanumeric with hyphens
-  // - No underscores
-  // - Max 50 chars (to allow for prefixes)
-  const branchName = `${branchPrefix}${entityType}-${entityNumber}-${timestamp}`;
-  console.log(`Provided branch name template: ${branchNameTemplate}`);
-  const newBranch = branchName.toLowerCase().substring(0, 50);
+  // Get the SHA of the source branch to use in template
+  let sourceSHA: string | undefined;
 
   try {
     // Get the SHA of the source branch to verify it exists
@@ -108,8 +99,17 @@ export async function setupBranch(
       ref: `heads/${sourceBranch}`,
     });
 
-    const currentSHA = sourceBranchRef.data.object.sha;
-    console.log(`Source branch SHA: ${currentSHA}`);
+    sourceSHA = sourceBranchRef.data.object.sha;
+    console.log(`Source branch SHA: ${sourceSHA}`);
+
+    // Generate branch name using template or default format
+    const newBranch = generateBranchName(
+      branchNameTemplate,
+      branchPrefix,
+      entityType,
+      entityNumber,
+      sourceSHA,
+    );
 
     // For commit signing, defer branch creation to the file ops server
     if (context.inputs.useCommitSigning) {
