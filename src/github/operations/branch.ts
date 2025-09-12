@@ -97,6 +97,7 @@ export async function setupBranch(
   // - No underscores
   // - Max 50 chars (to allow for prefixes)
   const branchName = `${branchPrefix}${entityType}-${entityNumber}-${timestamp}`;
+  console.log(`Provided branch name template: ${branchNameTemplate}`);
   const newBranch = branchName.toLowerCase().substring(0, 50);
 
   try {
