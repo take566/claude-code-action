@@ -131,6 +131,83 @@ describe("branch template utilities", () => {
       );
       expect(result.label).toBe("issue");
     });
+
+    it("should extract description from title when provided", () => {
+      const result = createBranchTemplateVariables(
+        "test/",
+        "issue",
+        123,
+        undefined,
+        undefined,
+        "Fix login bug with OAuth",
+      );
+      expect(result.description).toBe("fix-login-bug");
+    });
+
+    it("should handle title with special characters", () => {
+      const result = createBranchTemplateVariables(
+        "test/",
+        "issue",
+        456,
+        undefined,
+        undefined,
+        "Add: User Registration & Email Validation",
+      );
+      expect(result.description).toBe("add-user-registration");
+    });
+
+    it("should handle title with fewer than 3 words", () => {
+      const result = createBranchTemplateVariables(
+        "test/",
+        "issue",
+        789,
+        undefined,
+        undefined,
+        "Bug fix",
+      );
+      expect(result.description).toBe("bug-fix");
+    });
+
+    it("should handle single word title", () => {
+      const result = createBranchTemplateVariables(
+        "test/",
+        "issue",
+        101,
+        undefined,
+        undefined,
+        "Refactoring",
+      );
+      expect(result.description).toBe("refactoring");
+    });
+
+    it("should handle empty title", () => {
+      const result = createBranchTemplateVariables(
+        "test/",
+        "issue",
+        202,
+        undefined,
+        undefined,
+        "",
+      );
+      expect(result.description).toBe("");
+    });
+
+    it("should handle title with extra whitespace", () => {
+      const result = createBranchTemplateVariables(
+        "test/",
+        "issue",
+        303,
+        undefined,
+        undefined,
+        "  Update   README   documentation  ",
+      );
+      expect(result.description).toBe("update-readme-documentation");
+    });
+
+    it("should not set description when title is not provided", () => {
+      const result = createBranchTemplateVariables("test/", "issue", 404);
+      expect(result.description).toBeUndefined();
+    });
   });
 
   describe("generateBranchName", () => {
@@ -215,6 +292,67 @@ describe("branch template utilities", () => {
       );
 
       expect(result).toBe("dev/enhancement-issue_789");
+    });
+
+    it("should use description in template when provided", () => {
+      const template = "{{prefix}}{{description}}/{{entityNumber}}";
+      const result = generateBranchName(
+        template,
+        "feature/",
+        "issue",
+        123,
+        undefined,
+        undefined,
+        "Fix login bug with OAuth",
+      );
+
+      expect(result).toBe("feature/fix-login-bug/123");
+    });
+
+    it("should handle template with multiple variables including description", () => {
+      const template =
+        "{{prefix}}{{label}}/{{description}}-{{entityType}}_{{entityNumber}}";
+      const result = generateBranchName(
+        template,
+        "dev/",
+        "issue",
+        456,
+        undefined,
+        "bug",
+        "User authentication fails completely",
+      );
+
+      expect(result).toBe("dev/bug/user-authentication-fails-issue_456");
+    });
+
+    it("should handle description with special characters in template", () => {
+      const template = "{{prefix}}{{description}}-{{entityNumber}}";
+      const result = generateBranchName(
+        template,
+        "fix/",
+        "pr",
+        789,
+        undefined,
+        undefined,
+        "Add: User Registration & Email Validation",
+      );
+
+      expect(result).toBe("fix/add-user-registration-789");
+    });
+
+    it("should handle empty description in template", () => {
+      const template = "{{prefix}}{{description}}-{{entityNumber}}";
+      const result = generateBranchName(
+        template,
+        "test/",
+        "issue",
+        101,
+        undefined,
+        undefined,
+        "",
+      );
+
+      expect(result).toBe("test/-101");
     });
   });
 });

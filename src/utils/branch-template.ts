@@ -4,6 +4,25 @@
  * Branch name template parsing and variable substitution utilities
  */
 
+/**
+ * Extracts the first three words from a title and converts them to kebab-case
+ */
+function extractDescription(title: string): string {
+  if (!title || title.trim() === "") {
+    return "";
+  }
+
+  return title
+    .trim() // Remove leading/trailing whitespace
+    .split(/\s+/) // Split on whitespace
+    .slice(0, 3) // Take first 3 words
+    .join("-") // Join with hyphens
+    .toLowerCase() // Convert to lowercase
+    .replace(/[^a-z0-9-]/g, "") // Remove non-alphanumeric except hyphens
+    .replace(/-+/g, "-") // Replace multiple hyphens with single
+    .replace(/^-|-$/g, ""); // Remove leading/trailing hyphens
+}
+
 export interface BranchTemplateVariables {
   prefix: string;
   entityType: string;
@@ -16,6 +35,7 @@ export interface BranchTemplateVariables {
   minute: string;
   sha?: string;
   label?: string;
+  description?: string;
 }
 
 /**
@@ -48,6 +68,7 @@ export function createBranchTemplateVariables(
   entityNumber: number,
   sha?: string,
   label?: string,
+  title?: string,
 ): BranchTemplateVariables {
   const now = new Date();
 
@@ -63,6 +84,7 @@ export function createBranchTemplateVariables(
     minute: String(now.getMinutes()).padStart(2, "0"),
     sha: sha?.substring(0, 8), // First 8 characters of SHA
     label: label || entityType, // Fall back to entityType if no label
+    description: title !== undefined ? extractDescription(title) : undefined,
   };
 }
 
@@ -76,6 +98,7 @@ export function generateBranchName(
   entityNumber: number,
   sha?: string,
   label?: string,
+  title?: string,
 ): string {
   const variables = createBranchTemplateVariables(
     branchPrefix,
@@ -83,6 +106,7 @@ export function generateBranchName(
     entityNumber,
     sha,
     label,
+    title,
   );
 
   let branchName: string;

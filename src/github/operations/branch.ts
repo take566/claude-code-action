@@ -113,6 +113,9 @@ export async function setupBranch(
     // Extract first label from GitHub data
     const firstLabel = extractFirstLabel(githubData);
 
+    // Extract title from GitHub data
+    const title = githubData.contextData.title;
+
     // Generate branch name using template or default format
     const newBranch = generateBranchName(
       branchNameTemplate,
@@ -121,6 +124,7 @@ export async function setupBranch(
       entityNumber,
       sourceSHA,
       firstLabel,
+      title,
     );
 
     // For commit signing, defer branch creation to the file ops server
