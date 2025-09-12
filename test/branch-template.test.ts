@@ -81,6 +81,7 @@ describe("branch template utilities", () => {
       expect(result.entityType).toBe("issue");
       expect(result.entityNumber).toBe(123);
       expect(result.sha).toBe("abcdef12");
+      expect(result.label).toBe("issue"); // fallback to entityType
       expect(result.timestamp).toMatch(/^\d{8}-\d{4}$/);
       expect(result.year).toMatch(/^\d{4}$/);
       expect(result.month).toMatch(/^\d{2}$/);
@@ -102,6 +103,33 @@ describe("branch template utilities", () => {
     it("should handle missing SHA", () => {
       const result = createBranchTemplateVariables("test/", "pr", 456);
       expect(result.sha).toBeUndefined();
+    });
+
+    it("should use provided label when available", () => {
+      const result = createBranchTemplateVariables(
+        "test/",
+        "issue",
+        123,
+        undefined,
+        "bug",
+      );
+      expect(result.label).toBe("bug");
+    });
+
+    it("should fallback to entityType when label is not provided", () => {
+      const result = createBranchTemplateVariables("test/", "pr", 456);
+      expect(result.label).toBe("pr");
+    });
+
+    it("should fallback to entityType when label is empty string", () => {
+      const result = createBranchTemplateVariables(
+        "test/",
+        "issue",
+        789,
+        undefined,
+        "",
+      );
+      expect(result.label).toBe("issue");
     });
   });
 
@@ -152,6 +180,41 @@ describe("branch template utilities", () => {
       );
 
       expect(result).toBe("fix/pr-789-abcdef12");
+    });
+
+    it("should use label in template when provided", () => {
+      const template = "{{prefix}}{{label}}/{{entityNumber}}";
+      const result = generateBranchName(
+        template,
+        "feature/",
+        "issue",
+        123,
+        undefined,
+        "bug",
+      );
+
+      expect(result).toBe("feature/bug/123");
+    });
+
+    it("should fallback to entityType when label template is used but no label provided", () => {
+      const template = "{{prefix}}{{label}}-{{entityNumber}}";
+      const result = generateBranchName(template, "fix/", "pr", 456);
+
+      expect(result).toBe("fix/pr-456");
+    });
+
+    it("should handle template with both label and entityType", () => {
+      const template = "{{prefix}}{{label}}-{{entityType}}_{{entityNumber}}";
+      const result = generateBranchName(
+        template,
+        "dev/",
+        "issue",
+        789,
+        undefined,
+        "enhancement",
+      );
+
+      expect(result).toBe("dev/enhancement-issue_789");
     });
   });
 });

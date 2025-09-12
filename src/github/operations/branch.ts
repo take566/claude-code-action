@@ -14,6 +14,14 @@ import type { Octokits } from "../api/client";
 import type { FetchDataResult } from "../data/fetcher";
 import { generateBranchName } from "../../utils/branch-template";
 
+/**
+ * Extracts the first label from GitHub data, or returns undefined if no labels exist
+ */
+function extractFirstLabel(githubData: FetchDataResult): string | undefined {
+  const labels = githubData.contextData.labels?.nodes;
+  return labels && labels.length > 0 ? labels[0]?.name : undefined;
+}
+
 export type BranchInfo = {
   baseBranch: string;
   claudeBranch?: string;
@@ -102,6 +110,9 @@ export async function setupBranch(
     sourceSHA = sourceBranchRef.data.object.sha;
     console.log(`Source branch SHA: ${sourceSHA}`);
 
+    // Extract first label from GitHub data
+    const firstLabel = extractFirstLabel(githubData);
+
     // Generate branch name using template or default format
     const newBranch = generateBranchName(
       branchNameTemplate,
@@ -109,6 +120,7 @@ export async function setupBranch(
       entityType,
       entityNumber,
       sourceSHA,
+      firstLabel,
     );
 
     // For commit signing, defer branch creation to the file ops server

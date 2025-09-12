@@ -15,6 +15,7 @@ export interface BranchTemplateVariables {
   hour: string;
   minute: string;
   sha?: string;
+  label?: string;
 }
 
 /**
@@ -46,6 +47,7 @@ export function createBranchTemplateVariables(
   entityType: string,
   entityNumber: number,
   sha?: string,
+  label?: string,
 ): BranchTemplateVariables {
   const now = new Date();
 
@@ -60,6 +62,7 @@ export function createBranchTemplateVariables(
     hour: String(now.getHours()).padStart(2, "0"),
     minute: String(now.getMinutes()).padStart(2, "0"),
     sha: sha?.substring(0, 8), // First 8 characters of SHA
+    label: label || entityType, // Fall back to entityType if no label
   };
 }
 
@@ -72,12 +75,14 @@ export function generateBranchName(
   entityType: string,
   entityNumber: number,
   sha?: string,
+  label?: string,
 ): string {
   const variables = createBranchTemplateVariables(
     branchPrefix,
     entityType,
     entityNumber,
     sha,
+    label,
   );
 
   let branchName: string;
