@@ -26,7 +26,7 @@ export async function setupBranch(
 ): Promise<BranchInfo> {
   const { owner, repo } = context.repository;
   const entityNumber = context.entityNumber;
-  const { baseBranch, branchPrefix } = context.inputs;
+  const { baseBranch, branchPrefix, branchNameTemplate } = context.inputs;
   const isPR = context.isPR;
 
   if (isPR) {
