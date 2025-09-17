@@ -16,7 +16,7 @@ export const PR_QUERY = `
         additions
         deletions
         state
-        labels(first: 10) {
+        labels(first: 1) {
           nodes {
             name
           }
@@ -102,7 +102,7 @@ export const ISSUE_QUERY = `
         }
         createdAt
         state
-        labels(first: 10) {
+        labels(first: 1) {
           nodes {
             name
           }
