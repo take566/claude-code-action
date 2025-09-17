@@ -117,7 +117,7 @@ export async function setupBranch(
     const title = githubData.contextData.title;
 
     // Generate branch name using template or default format
-    const newBranch = generateBranchName(
+    let newBranch = generateBranchName(
       branchNameTemplate,
       branchPrefix,
       entityType,
@@ -126,6 +126,27 @@ export async function setupBranch(
       firstLabel,
       title,
     );
+
+    // Check if generated branch already exists on remote
+    try {
+      await $`git ls-remote --exit-code origin refs/heads/${newBranch}`.quiet();
+
+      // If we get here, branch exists (exit code 0)
+      console.log(
+        `Branch '${newBranch}' already exists, falling back to default format`,
+      );
+      newBranch = generateBranchName(
+        undefined, // Force default template
+        branchPrefix,
+        entityType,
+        entityNumber,
+        sourceSHA,
+        firstLabel,
+        title,
+      );
+    } catch {
+      // Branch doesn't exist (non-zero exit code), continue with generated name
+    }
 
     // For commit signing, defer branch creation to the file ops server
     if (context.inputs.useCommitSigning) {
