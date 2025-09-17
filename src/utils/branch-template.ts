@@ -55,30 +55,6 @@ export function applyBranchTemplate(
 }
 
 /**
- * Generates template variables from current context
- */
-export function createBranchTemplateVariables(
-  branchPrefix: string,
-  entityType: string,
-  entityNumber: number,
-  sha?: string,
-  label?: string,
-  title?: string,
-): BranchTemplateVariables {
-  const now = new Date();
-
-  return {
-    prefix: branchPrefix,
-    entityType,
-    entityNumber,
-    timestamp: `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}-${String(now.getHours()).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}`,
-    sha: sha?.substring(0, 8), // First 8 characters of SHA
-    label: label || entityType, // Fall back to entityType if no label
-    description: title !== undefined ? extractDescription(title) : undefined,
-  };
-}
-
-/**
  * Generates a branch name from the provided `template` and set of `variables`. Uses a default format if the template is empty or produces an empty result.
  */
 export function generateBranchName(
@@ -90,14 +66,17 @@ export function generateBranchName(
   label?: string,
   title?: string,
 ): string {
-  const variables = createBranchTemplateVariables(
-    branchPrefix,
+  const now = new Date();
+
+  const variables: BranchTemplateVariables = {
+    prefix: branchPrefix,
     entityType,
     entityNumber,
-    sha,
-    label,
-    title,
-  );
+    timestamp: `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}-${String(now.getHours()).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}`,
+    sha: sha?.substring(0, 8), // First 8 characters of SHA
+    label: label || entityType, // Fall back to entityType if no label
+    description: title ? extractDescription(title) : undefined,
+  };
 
   if (template?.trim()) {
     const branchName = applyBranchTemplate(template, variables);
