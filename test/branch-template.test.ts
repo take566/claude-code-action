@@ -3,7 +3,6 @@
 import { describe, it, expect } from "bun:test";
 import {
   applyBranchTemplate,
-  createBranchTemplateVariables,
   generateBranchName,
 } from "../src/utils/branch-template";
 
@@ -53,143 +52,6 @@ describe("branch template utilities", () => {
     });
   });
 
-  describe("createBranchTemplateVariables", () => {
-    it("should create all required variables", () => {
-      const result = createBranchTemplateVariables(
-        "claude/",
-        "issue",
-        123,
-        "abcdef123456",
-      );
-
-      expect(result.prefix).toBe("claude/");
-      expect(result.entityType).toBe("issue");
-      expect(result.entityNumber).toBe(123);
-      expect(result.sha).toBe("abcdef12");
-      expect(result.label).toBe("issue"); // fallback to entityType
-      expect(result.timestamp).toMatch(/^\d{8}-\d{4}$/);
-    });
-
-    it("should handle SHA truncation", () => {
-      const result = createBranchTemplateVariables(
-        "test/",
-        "pr",
-        456,
-        "abcdef123456789",
-      );
-      expect(result.sha).toBe("abcdef12");
-    });
-
-    it("should handle missing SHA", () => {
-      const result = createBranchTemplateVariables("test/", "pr", 456);
-      expect(result.sha).toBeUndefined();
-    });
-
-    it("should use provided label when available", () => {
-      const result = createBranchTemplateVariables(
-        "test/",
-        "issue",
-        123,
-        undefined,
-        "bug",
-      );
-      expect(result.label).toBe("bug");
-    });
-
-    it("should fallback to entityType when label is not provided", () => {
-      const result = createBranchTemplateVariables("test/", "pr", 456);
-      expect(result.label).toBe("pr");
-    });
-
-    it("should fallback to entityType when label is empty string", () => {
-      const result = createBranchTemplateVariables(
-        "test/",
-        "issue",
-        789,
-        undefined,
-        "",
-      );
-      expect(result.label).toBe("issue");
-    });
-
-    it("should extract description from title when provided", () => {
-      const result = createBranchTemplateVariables(
-        "test/",
-        "issue",
-        123,
-        undefined,
-        undefined,
-        "Fix login bug with OAuth",
-      );
-      expect(result.description).toBe("fix-login-bug");
-    });
-
-    it("should handle title with special characters", () => {
-      const result = createBranchTemplateVariables(
-        "test/",
-        "issue",
-        456,
-        undefined,
-        undefined,
-        "Add: User Registration & Email Validation",
-      );
-      expect(result.description).toBe("add-user-registration");
-    });
-
-    it("should handle title with fewer than 3 words", () => {
-      const result = createBranchTemplateVariables(
-        "test/",
-        "issue",
-        789,
-        undefined,
-        undefined,
-        "Bug fix",
-      );
-      expect(result.description).toBe("bug-fix");
-    });
-
-    it("should handle single word title", () => {
-      const result = createBranchTemplateVariables(
-        "test/",
-        "issue",
-        101,
-        undefined,
-        undefined,
-        "Refactoring",
-      );
-      expect(result.description).toBe("refactoring");
-    });
-
-    it("should handle empty title", () => {
-      const result = createBranchTemplateVariables(
-        "test/",
-        "issue",
-        202,
-        undefined,
-        undefined,
-        "",
-      );
-      expect(result.description).toBe("");
-    });
-
-    it("should handle title with extra whitespace", () => {
-      const result = createBranchTemplateVariables(
-        "test/",
-        "issue",
-        303,
-        undefined,
-        undefined,
-        "  Update   README   documentation  ",
-      );
-      expect(result.description).toBe("update-readme-documentation");
-    });
-
-    it("should not set description when title is not provided", () => {
-      const result = createBranchTemplateVariables("test/", "issue", 404);
-      expect(result.description).toBeUndefined();
-    });
-  });
-
   describe("generateBranchName", () => {
     it("should use custom template when provided", () => {
       const template = "{{prefix}}custom-{{entityType}}_{{entityNumber}}";
@@ -210,20 +72,28 @@ describe("branch template utilities", () => {
       expect(result).toMatch(/^claude\/pr-456-\d{8}-\d{4}$/);
     });
 
-    it("should apply Kubernetes-compatible transformations", () => {
+    it("should preserve custom template formatting (no automatic lowercase/truncation)", () => {
       const template = "{{prefix}}UPPERCASE_Branch-Name_{{entityNumber}}";
       const result = generateBranchName(template, "Feature/", "issue", 123);
 
-      expect(result).toBe("feature/uppercase_branch-name_123");
+      expect(result).toBe("Feature/UPPERCASE_Branch-Name_123");
     });
 
-    it("should truncate long branch names to 50 characters", () => {
+    it("should not truncate custom template results", () => {
       const template =
         "{{prefix}}very-long-branch-name-that-exceeds-the-maximum-allowed-length-{{entityNumber}}";
       const result = generateBranchName(template, "feature/", "issue", 123);
 
-      expect(result.length).toBe(50);
-      expect(result).toBe("feature/very-long-branch-name-that-exceeds-the-max");
+      expect(result).toBe(
+        "feature/very-long-branch-name-that-exceeds-the-maximum-allowed-length-123",
+      );
+    });
+
+    it("should apply Kubernetes-compatible transformations to default template only", () => {
+      const result = generateBranchName(undefined, "Feature/", "issue", 123);
+
+      expect(result).toMatch(/^feature\/issue-123-\d{8}-\d{4}$/);
+      expect(result.length).toBeLessThanOrEqual(50);
     });
 
     it("should handle SHA in template", () => {
@@ -333,6 +203,30 @@ describe("branch template utilities", () => {
       );
 
       expect(result).toBe("test/-101");
+    });
+
+    it("should fallback to default format when template produces empty result", () => {
+      const template = "{{description}}"; // Will be empty if no title provided
+      const result = generateBranchName(template, "claude/", "issue", 123);
+
+      expect(result).toMatch(/^claude\/issue-123-\d{8}-\d{4}$/);
+      expect(result.length).toBeLessThanOrEqual(50);
+    });
+
+    it("should fallback to default format when template produces only whitespace", () => {
+      const template = "  {{description}}  "; // Will be "  " if description is empty
+      const result = generateBranchName(
+        template,
+        "fix/",
+        "pr",
+        456,
+        undefined,
+        undefined,
+        "",
+      );
+
+      expect(result).toMatch(/^fix\/pr-456-\d{8}-\d{4}$/);
+      expect(result.length).toBeLessThanOrEqual(50);
     });
   });
 });

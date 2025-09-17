@@ -45,10 +45,9 @@ export function applyBranchTemplate(
 
   // Replace each variable
   Object.entries(variables).forEach(([key, value]) => {
-    if (value !== undefined) {
-      const placeholder = `{{${key}}}`;
-      result = result.replaceAll(placeholder, String(value));
-    }
+    const placeholder = `{{${key}}}`;
+    const replacement = value ? String(value) : "";
+    result = result.replaceAll(placeholder, replacement);
   });
 
   return result;
