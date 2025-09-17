@@ -17,11 +17,6 @@ describe("branch template utilities", () => {
         entityType: "issue",
         entityNumber: 123,
         timestamp: "20240301-1430",
-        year: "2024",
-        month: "03",
-        day: "01",
-        hour: "14",
-        minute: "30",
         sha: "abcd1234",
       };
 
@@ -31,22 +26,17 @@ describe("branch template utilities", () => {
 
     it("should handle custom templates with multiple variables", () => {
       const template =
-        "{{prefix}}fix/{{entityType}}_{{entityNumber}}_{{year}}{{month}}{{day}}_{{sha}}";
+        "{{prefix}}fix/{{entityType}}_{{entityNumber}}_{{timestamp}}_{{sha}}";
       const variables = {
         prefix: "claude-",
         entityType: "pr",
         entityNumber: 456,
         timestamp: "20240301-1430",
-        year: "2024",
-        month: "03",
-        day: "01",
-        hour: "14",
-        minute: "30",
         sha: "abcd1234",
       };
 
       const result = applyBranchTemplate(template, variables);
-      expect(result).toBe("claude-fix/pr_456_20240301_abcd1234");
+      expect(result).toBe("claude-fix/pr_456_20240301-1430_abcd1234");
     });
 
     it("should handle templates with missing variables gracefully", () => {
@@ -56,11 +46,6 @@ describe("branch template utilities", () => {
         entityType: "issue",
         entityNumber: 123,
         timestamp: "20240301-1430",
-        year: "2024",
-        month: "03",
-        day: "01",
-        hour: "14",
-        minute: "30",
       };
 
       const result = applyBranchTemplate(template, variables);
@@ -83,11 +68,6 @@ describe("branch template utilities", () => {
       expect(result.sha).toBe("abcdef12");
       expect(result.label).toBe("issue"); // fallback to entityType
       expect(result.timestamp).toMatch(/^\d{8}-\d{4}$/);
-      expect(result.year).toMatch(/^\d{4}$/);
-      expect(result.month).toMatch(/^\d{2}$/);
-      expect(result.day).toMatch(/^\d{2}$/);
-      expect(result.hour).toMatch(/^\d{2}$/);
-      expect(result.minute).toMatch(/^\d{2}$/);
     });
 
     it("should handle SHA truncation", () => {

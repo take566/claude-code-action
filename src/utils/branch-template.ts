@@ -28,11 +28,6 @@ export interface BranchTemplateVariables {
   entityType: string;
   entityNumber: number;
   timestamp: string;
-  year: string;
-  month: string;
-  day: string;
-  hour: string;
-  minute: string;
   sha?: string;
   label?: string;
   description?: string;
@@ -77,11 +72,6 @@ export function createBranchTemplateVariables(
     entityType,
     entityNumber,
     timestamp: `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}-${String(now.getHours()).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}`,
-    year: String(now.getFullYear()),
-    month: String(now.getMonth() + 1).padStart(2, "0"),
-    day: String(now.getDate()).padStart(2, "0"),
-    hour: String(now.getHours()).padStart(2, "0"),
-    minute: String(now.getMinutes()).padStart(2, "0"),
     sha: sha?.substring(0, 8), // First 8 characters of SHA
     label: label || entityType, // Fall back to entityType if no label
     description: title !== undefined ? extractDescription(title) : undefined,
