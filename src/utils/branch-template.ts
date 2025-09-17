@@ -99,20 +99,19 @@ export function generateBranchName(
     title,
   );
 
-  let branchName: string;
+  if (template?.trim()) {
+    const branchName = applyBranchTemplate(template, variables);
 
-  if (template && template.trim()) {
-    // Use custom template
-    branchName = applyBranchTemplate(template, variables);
-  } else {
-    // Use default format (backward compatibility)
-    branchName = `${branchPrefix}${entityType}-${entityNumber}-${variables.timestamp}`;
+    // Return generated name if non-empty
+    if (branchName.trim().length > 0) return branchName;
+
+    // Log fallback when custom template produces empty result
+    console.log(
+      `Branch template '${template}' generated empty result, falling back to default format`,
+    );
   }
 
-  // Ensure branch name is Kubernetes-compatible:
-  // - Lowercase only
-  // - Alphanumeric with hyphens
-  // - No underscores
-  // - Max 50 chars (to allow for prefixes)
+  const branchName = `${branchPrefix}${entityType}-${entityNumber}-${variables.timestamp}`;
+  // Kubernetes compatible: lowercase, max 50 chars, alphanumeric and hyphens only
   return branchName.toLowerCase().substring(0, 50);
 }
