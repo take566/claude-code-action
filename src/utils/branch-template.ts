@@ -79,7 +79,7 @@ export function createBranchTemplateVariables(
 }
 
 /**
- * Generates a branch name using template or falls back to default format
+ * Generates a branch name from the provided `template` and set of `variables`. Uses a default format if the template is empty or produces an empty result.
  */
 export function generateBranchName(
   template: string | undefined,
@@ -102,10 +102,9 @@ export function generateBranchName(
   if (template?.trim()) {
     const branchName = applyBranchTemplate(template, variables);
 
-    // Return generated name if non-empty
+    // Some templates could produce empty results- validate
     if (branchName.trim().length > 0) return branchName;
 
-    // Log fallback when custom template produces empty result
     console.log(
       `Branch template '${template}' generated empty result, falling back to default format`,
     );
