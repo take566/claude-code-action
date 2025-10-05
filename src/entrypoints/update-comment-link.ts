@@ -9,9 +9,11 @@ import {
 import {
   parseGitHubContext,
   isPullRequestReviewCommentEvent,
+  isEntityContext,
 } from "../github/context";
 import { GITHUB_SERVER_URL } from "../github/api/config";
-import { checkAndDeleteEmptyBranch } from "../github/operations/branch-cleanup";
+import { checkAndCommitOrDeleteBranch } from "../github/operations/branch-cleanup";
+import { updateClaudeComment } from "../github/operations/comments/update-claude-comment";
 
 async function run() {
   try {
@@ -22,7 +24,14 @@ async function run() {
     const triggerUsername = process.env.TRIGGER_USERNAME;
 
     const context = parseGitHubContext();
+
+    // This script is only called for entity-based events
+    if (!isEntityContext(context)) {
+      throw new Error("update-comment-link requires an entity context");
+    }
+
     const { owner, repo } = context.repository;
+
     const octokit = createOctokit(githubToken);
 
     const serverUrl = GITHUB_SERVER_URL;
@@ -87,13 +96,16 @@ async function run() {
     const currentBody = comment.body ?? "";
 
     // Check if we need to add branch link for new branches
-    const { shouldDeleteBranch, branchLink } = await checkAndDeleteEmptyBranch(
-      octokit,
-      owner,
-      repo,
-      claudeBranch,
-      baseBranch,
-    );
+    const useCommitSigning = process.env.USE_COMMIT_SIGNING === "true";
+    const { shouldDeleteBranch, branchLink } =
+      await checkAndCommitOrDeleteBranch(
+        octokit,
+        owner,
+        repo,
+        claudeBranch,
+        baseBranch,
+        useCommitSigning,
+      );
 
     // Check if we need to add PR URL when we have a new branch
     let prLink = "";
@@ -166,7 +178,7 @@ async function run() {
           if (Array.isArray(outputData) && outputData.length > 0) {
             const lastElement = outputData[outputData.length - 1];
             if (
-              lastElement.role === "system" &&
+              lastElement.type === "result" &&
               "cost_usd" in lastElement &&
               "duration_ms" in lastElement
             ) {
@@ -197,30 +209,21 @@ async function run() {
       jobUrl,
       branchLink,
       prLink,
-      branchName: shouldDeleteBranch ? undefined : claudeBranch,
+      branchName: shouldDeleteBranch || !branchLink ? undefined : claudeBranch,
       triggerUsername,
       errorDetails,
     };
 
     const updatedBody = updateCommentBody(commentInput);
 
-    // Update the comment using the appropriate API
     try {
-      if (isPRReviewComment) {
-        await octokit.rest.pulls.updateReviewComment({
-          owner,
-          repo,
-          comment_id: commentId,
-          body: updatedBody,
-        });
-      } else {
-        await octokit.rest.issues.updateComment({
-          owner,
-          repo,
-          comment_id: commentId,
-          body: updatedBody,
-        });
-      }
+      await updateClaudeComment(octokit.rest, {
+        owner,
+        repo,
+        commentId,
+        body: updatedBody,
+        isPullRequestReviewComment: isPRReviewComment,
+      });
       console.log(
         `✅ Updated ${isPRReviewComment ? "PR review" : "issue"} comment ${commentId} with job link`,
       );
